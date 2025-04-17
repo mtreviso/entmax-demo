@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>α-entmax Support Size Visualization</title>
+  <link rel="icon" href="alpha.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+  <style>
+    .color-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .math-container {
+      overflow-x: auto;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-center text-indigo-800">α-entmax Support Size Visualization</h1>
+      <p class="text-center text-gray-600 mt-2">Explore how α affects probability support in 3D space (n=3)</p>
+    </header>
+    
+    <!-- Main content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Controls and Info Panel -->
+      <div class="lg:col-span-1 bg-white rounded-lg shadow-md p-6">
+        <!-- Alpha control -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">α value</label>
+          <div class="flex items-center">
+            <input type="range" id="alpha-slider" min="1.01" max="10" step="0.01" value="1.5" 
+                   class="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer">
+            <span id="alpha-value" class="ml-4 px-3 py-1 bg-indigo-100 rounded-md text-indigo-800 font-medium w-16 text-center">1.5</span>
+          </div>
+        </div>
+        
+        <!-- Points control -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Number of Points</label>
+          <div class="flex items-center">
+            <input type="range" id="points-slider" min="100" max="8000" step="100" value="1000" 
+                   class="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer">
+            <span id="points-value" class="ml-4 px-3 py-1 bg-indigo-100 rounded-md text-indigo-800 font-medium w-16 text-center">1000</span>
+          </div>
+        </div>
+        
+        <!-- Simplex toggle -->
+        <div class="mb-6">
+          <label class="flex items-center space-x-3 cursor-pointer">
+            <input type="checkbox" id="show-simplex" class="form-checkbox h-5 w-5 text-indigo-600 rounded">
+            <span class="text-sm font-medium text-gray-700">Show Probability Simplex</span>
+          </label>
+        </div>
+        
+        <!-- Stats -->
+        <div class="mb-6">
+          <h3 class="text-md font-semibold text-gray-700 mb-3">Support Size Distribution</h3>
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <div class="color-dot bg-red-600 mr-2"></div>
+              <span class="text-sm text-gray-600">Support Size 1:</span>
+              <span id="support-1-percent" class="ml-auto font-medium">0%</span>
+            </div>
+            <div class="flex items-center">
+              <div class="color-dot bg-blue-600 mr-2"></div>
+              <span class="text-sm text-gray-600">Support Size 2:</span>
+              <span id="support-2-percent" class="ml-auto font-medium">0%</span>
+            </div>
+            <div class="flex items-center">
+              <div class="color-dot bg-green-600 mr-2"></div>
+              <span class="text-sm text-gray-600">Support Size 3:</span>
+              <span id="support-3-percent" class="ml-auto font-medium">0%</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Navigation Help -->
+        <div class="p-4 bg-gray-50 rounded-lg">
+          <h3 class="text-sm font-semibold text-gray-700 mb-2">Navigation Controls</h3>
+          <ul class="text-xs text-gray-600 space-y-1">
+            <li>• Left-click + drag: Rotate view</li>
+            <li>• Right-click + drag: Pan view</li>
+            <li>• Scroll wheel: Zoom in/out</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Visualization Container -->
+      <div class="lg:col-span-2 bg-white rounded-lg shadow-md overflow-hidden relative" style="height: 600px;">
+        <div id="visualization-container" class="w-full h-full"></div>
+        <div id="loading-indicator" class="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center hidden">
+          <div class="flex flex-col items-center">
+            <svg class="animate-spin h-8 w-8 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-indigo-800 font-medium">Computing...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mathematical Definitions -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-bold text-indigo-800 mb-4">Mathematical Definition of α-entmax</h2>
+      <div class="math-container">
+        <p>For \(\alpha > 1\), the \(\alpha\)-entmax transformation of a score vector
+        \(\mathbf{z} \in \mathbb{R}^m\) is defined as:</p>
+        
+        \[
+        \alpha\text{-entmax}(\mathbf{z})
+        =
+        \arg\max_{\mathbf{p} \in \triangle^m}
+        \Bigl(\mathbf{p}^\top \mathbf{z} + H_\alpha(\mathbf{p})\Bigr),
+        \quad
+        \triangle^m
+        = \bigl\{\mathbf{p} \in \mathbb{R}^m_{\ge 0}:\sum_i p_i = 1\bigr\},
+        \]
+        
+        <p class="mt-4">where \(H_\alpha(\mathbf{p})\) is the Tsallis(\(\alpha\)) entropy. A known closed form for
+        \(\alpha\text{-entmax}\) with \(\alpha > 1\) is:</p>
+        
+        \[
+        p_i^\star
+        =
+        \bigl[(\alpha-1)\,z_i - \tau(\mathbf{z})\bigr]_+^{\tfrac{1}{\alpha-1}},
+        \quad
+        \sum_{i=1}^m p_i^\star = 1,
+        \quad
+        [\cdot]_+ = \max(0,\cdot).
+        \]
+        
+        <p class="mt-4">Here, \(\tau(\mathbf{z})\) is chosen so that \(\mathbf{p}^\star\) sums to 1.</p>
+      </div>
+      
+      <div class="mt-6 border-t pt-4">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Citation</h3>
+        <p class="text-sm text-gray-600">
+          Ben Peters, Vlad Niculae, and André F. T. Martins. 2019. Sparse sequence-to-sequence models. 
+          In <em>Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</em>, 
+          pages 1504–1519, Florence, Italy. Association for Computational Linguistics.
+          <a href="https://arxiv.org/abs/1905.05702" class="text-indigo-600 hover:text-indigo-800" target="_blank">
+            https://arxiv.org/abs/1905.05702
+          </a>
+        </p>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="mt-10 text-center text-gray-500 text-sm">
+      <p>Visualization of α-entmax support size probabilities in 3D space.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Main visualization
+    const container = document.getElementById('visualization-container');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const loadingIndicator = document.getElementById('loading-indicator');
+    
+    // Three.js setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height);
+    renderer.setClearColor(0xffffff);
+    container.appendChild(renderer.domElement);
+    
+    // State variables for improved camera controls
+    let isRotating = false;
+    let isPanning = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let cameraDistance = 10;
+    let cameraTarget = new THREE.Vector3(0, 0, 0);
+    
+    // Enhanced camera controls
+    renderer.domElement.addEventListener('mousedown', function(e) {
+      if (e.button === 0) { // Left click for rotation
+        isRotating = true;
+      } else if (e.button === 2) { // Right click for panning
+        isPanning = true;
+      }
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+      e.preventDefault();
+    });
+    
+    renderer.domElement.addEventListener('mousemove', function(e) {
+      if (isRotating) {
+        const deltaMove = {
+          x: e.clientX - previousMousePosition.x,
+          y: e.clientY - previousMousePosition.y
+        };
+        
+        // Spherical coordinates for rotation
+        const spherical = new THREE.Spherical().setFromVector3(
+          camera.position.clone().sub(cameraTarget)
+        );
+        
+        // Update angles based on mouse movement
+        spherical.theta -= deltaMove.x * 0.01;
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi + deltaMove.y * 0.01));
+        
+        // Convert back to Cartesian coordinates
+        const newPosition = new THREE.Vector3().setFromSpherical(spherical).add(cameraTarget);
+        camera.position.copy(newPosition);
+        camera.lookAt(cameraTarget);
+      } else if (isPanning) {
+        const deltaMove = {
+          x: e.clientX - previousMousePosition.x,
+          y: e.clientY - previousMousePosition.y
+        };
+        
+        // Get camera right and up vectors
+        const right = new THREE.Vector3();
+        const up = new THREE.Vector3(0, 1, 0);
+        right.crossVectors(camera.up, camera.getWorldDirection(new THREE.Vector3()));
+        
+        // Pan speed based on distance
+        const panSpeed = cameraDistance * 0.001;
+        
+        // Move target and camera
+        const pan = new THREE.Vector3()
+          .addScaledVector(right, deltaMove.x * panSpeed)
+          .addScaledVector(up, -deltaMove.y * panSpeed);
+          
+        cameraTarget.add(pan);
+        camera.position.add(pan);
+      }
+      
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    
+    renderer.domElement.addEventListener('mouseup', function(e) {
+      isRotating = false;
+      isPanning = false;
+    });
+    
+    renderer.domElement.addEventListener('mouseleave', function(e) {
+      isRotating = false;
+      isPanning = false;
+    });
+    
+    // Zoom with mouse wheel
+    renderer.domElement.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      
+      // Zoom factor
+      const zoomFactor = e.deltaY * 0.001;
+      
+      // Get direction vector from camera to target
+      const direction = new THREE.Vector3().subVectors(camera.position, cameraTarget);
+      
+      // Update distance
+      cameraDistance = Math.max(5, Math.min(20, direction.length() * (1 + zoomFactor)));
+      
+      // Scale direction to new distance and update camera position
+      direction.normalize().multiplyScalar(cameraDistance);
+      camera.position.copy(direction.add(cameraTarget));
+    });
+    
+    // Prevent context menu on right-click
+    renderer.domElement.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+    
+    // Create black axes
+    function createBlackAxes(length) {
+      const axes = new THREE.Object3D();
+      
+      // Create lines for each axis
+      const xAxis = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(length, 0, 0)
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+      );
+      
+      const yAxis = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, length, 0)
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+      );
+      
+      const zAxis = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, 0, length)
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 })
+      );
+      
+      // Add text labels
+      const createLabel = (text, position) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 32, 32);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(material);
+        sprite.position.copy(position);
+        sprite.scale.set(1, 1, 1);
+        
+        return sprite;
+      };
+      
+      const xLabel = createLabel('X', new THREE.Vector3(length + 0.5, 0, 0));
+      const yLabel = createLabel('Y', new THREE.Vector3(0, length + 0.5, 0));
+      const zLabel = createLabel('Z', new THREE.Vector3(0, 0, length + 0.5));
+      
+      // Add all elements to the group
+      axes.add(xAxis);
+      axes.add(yAxis);
+      axes.add(zAxis);
+      axes.add(xLabel);
+      axes.add(yLabel);
+      axes.add(zLabel);
+      
+      return axes;
+    }
+    
+    // Add black axes
+    const blackAxes = createBlackAxes(5);
+    scene.add(blackAxes);
+    
+    // Camera position
+    camera.position.set(7, 7, 7);
+    camera.lookAt(cameraTarget);
+    
+    // Points storage - we'll keep all points and just update colors
+    let allPoints = [];
+    let pointsGroup = new THREE.Group();
+    scene.add(pointsGroup);
+    
+    // Simplex
+    let simplexGroup = new THREE.Group();
+    scene.add(simplexGroup);
+    
+    function drawSimplex() {
+      // Clear existing simplex
+      while(simplexGroup.children.length > 0) {
+        simplexGroup.remove(simplexGroup.children[0]);
+      }
+      
+      if (!document.getElementById('show-simplex').checked) return;
+      
+      // Create simplex vertices in 3D space
+      const simplexVertices = [
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, 0, 1)
+      ];
+      
+      // Create edges
+      const simplexGeometry = new THREE.BufferGeometry();
+      const vertices = [];
+      
+      // Add each edge
+      for (let i = 0; i < 3; i++) {
+        for (let j = i + 1; j < 3; j++) {
+          vertices.push(simplexVertices[i].x, simplexVertices[i].y, simplexVertices[i].z);
+          vertices.push(simplexVertices[j].x, simplexVertices[j].y, simplexVertices[j].z);
+        }
+      }
+      
+      simplexGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      const simplexMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+      const simplexLines = new THREE.LineSegments(simplexGeometry, simplexMaterial);
+      
+      // Create simplex face
+      const triangleGeometry = new THREE.BufferGeometry();
+      triangleGeometry.setFromPoints([
+        simplexVertices[0],
+        simplexVertices[1],
+        simplexVertices[2]
+      ]);
+      const triangleMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xFFFFFF, 
+        transparent: true, 
+        opacity: 0.5,
+        side: THREE.DoubleSide
+      });
+      const triangleMesh = new THREE.Mesh(triangleGeometry, triangleMaterial);
+      
+      simplexGroup.add(simplexLines);
+      simplexGroup.add(triangleMesh);
+    }
+    
+    // Create a circle texture for points
+    function createCircleTexture() {
+      const canvas = document.createElement('canvas');
+      const size = 64;
+      canvas.width = size;
+      canvas.height = size;
+      
+      const context = canvas.getContext('2d');
+      context.beginPath();
+      context.arc(size/2, size/2, size/2, 0, 2 * Math.PI);
+      context.fillStyle = 'white';
+      context.fill();
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+    
+    const circleTexture = createCircleTexture();
+    
+    // Implementation of entmax_bisect similar to the PyTorch version
+    function entmax_bisect(z, alpha = 2.0, T = 50, eps = 1e-8) {
+      const n = z.length;
+      const z_tilde = z.map(zi => (alpha - 1) * zi);
+      
+      // Find max value
+      const z_max = Math.max(...z_tilde);
+      
+      // Initial bounds for tau
+      let tau_l = z_max - 1;
+      let tau_r = z_max - Math.pow(n, 1 - alpha);
+      let old_tau_m = Infinity;
+      let tau_m;
+      
+      // Binary search for tau
+      for (let t = 0; t < T; t++) {
+        tau_m = (tau_l + tau_r) / 2;
+        
+        // Compute probabilities
+        const p = z_tilde.map(zi => Math.max(0, zi - tau_m) ** (1 / (alpha - 1)));
+        
+        // Check sum constraint
+        const p_sum = p.reduce((a, b) => a + b, 0);
+        const cond = p_sum < 1;
+        
+        // Update bounds
+        if (!cond) {
+          tau_l = tau_m;
+        } else {
+          tau_r = tau_m;
+        }
+        
+        // Check convergence
+        if (Math.abs(tau_m - old_tau_m) < eps) {
+          break;
+        }
+        old_tau_m = tau_m;
+      }
+      
+      // Final probabilities
+      const p = z_tilde.map(zi => Math.max(0, zi - tau_m) ** (1 / (alpha - 1)));
+      
+      return { p, tau: tau_m };
+    }
+    
+    // Calculate support size using entmax_bisect
+    function getEntmaxSupportSize(z, alpha) {
+      try {
+        const result = entmax_bisect(z, alpha);
+        return result.p.filter(pi => pi > 1e-10).length;
+      } catch (e) {
+        console.error("Error calculating support size", e);
+        return 0;
+      }
+    }
+    
+    // Generate points only once
+    function generatePointsOnce() {
+      loadingIndicator.classList.remove('hidden');
+      
+      // Use setTimeout to allow the UI to update before heavy computation
+      setTimeout(() => {
+        // Generate points in a grid for more uniform distribution
+        const numPoints = parseInt(document.getElementById('points-slider').value);
+        const gridSize = Math.ceil(Math.pow(numPoints, 1/3));
+        const boxSize = 10; // -5 to 5 on each axis
+        const stepSize = boxSize / gridSize;
+        
+        allPoints = [];
+        
+        // Clear existing points
+        while(pointsGroup.children.length > 0) {
+          pointsGroup.remove(pointsGroup.children[0]);
+        }
+        
+        // Generate points uniformly in a grid
+        for (let i = 0; i < gridSize; i++) {
+          for (let j = 0; j < gridSize; j++) {
+            for (let k = 0; k < gridSize; k++) {
+              // Small random offset for more natural look
+              const jitter = 0.5 * stepSize;
+              const x = (i * stepSize) - boxSize/2 + (Math.random() * jitter);
+              const y = (j * stepSize) - boxSize/2 + (Math.random() * jitter);
+              const z = (k * stepSize) - boxSize/2 + (Math.random() * jitter);
+              
+              allPoints.push({ position: [x, y, z], z: [x, y, z] });
+            }
+          }
+        }
+        
+        // Create three materials for three different support sizes with circular points
+        const materials = [
+          new THREE.PointsMaterial({ 
+            color: 0xE41A1C, 
+            size: 0.15,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true,
+            map: circleTexture
+          }),
+          new THREE.PointsMaterial({ 
+            color: 0x377EB8, 
+            size: 0.15,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true,
+            map: circleTexture
+          }),
+          new THREE.PointsMaterial({ 
+            color: 0x4DAF4A, 
+            size: 0.15,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true,
+            map: circleTexture
+          })
+        ];
+        
+        // Create three point clouds, one for each category
+        for (let i = 0; i < 3; i++) {
+          const geometry = new THREE.BufferGeometry();
+          const points = new THREE.Points(geometry, materials[i]);
+          pointsGroup.add(points);
+        }
+        
+        // Update colors for current alpha
+        updateColors();
+      }, 0);
+    }
+    
+    // Update colors based on alpha without regenerating points
+    function updateColors() {
+      loadingIndicator.classList.remove('hidden');
+      
+      // Use setTimeout to allow the UI to update before heavy computation
+      setTimeout(() => {
+        const alpha = parseFloat(document.getElementById('alpha-slider').value);
+        
+        // Calculate support size and categorize points
+        const categories = [0, 0, 0]; // [support=1, support=2, support=3]
+        const categoryPoints = [[], [], []];
+        
+        allPoints.forEach(point => {
+          const supportSize = getEntmaxSupportSize(point.z, alpha);
+          if (supportSize >= 1 && supportSize <= 3) {
+            categories[supportSize - 1]++;
+            categoryPoints[supportSize - 1].push(point.position);
+          }
+        });
+        
+        // Update statistics
+        const total = allPoints.length;
+        document.getElementById('support-1-percent').textContent = 
+          (100 * categories[0] / total).toFixed(1) + '%';
+        document.getElementById('support-2-percent').textContent = 
+          (100 * categories[1] / total).toFixed(1) + '%';
+        document.getElementById('support-3-percent').textContent = 
+          (100 * categories[2] / total).toFixed(1) + '%';
+        
+        // Update each point cloud
+        for (let k = 0; k < 3; k++) {
+          const positions = new Float32Array(categoryPoints[k].length * 3);
+          
+          categoryPoints[k].forEach((position, i) => {
+            positions[i * 3] = position[0];
+            positions[i * 3 + 1] = position[1];
+            positions[i * 3 + 2] = position[2];
+          });
+          
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          
+          // Update the geometry
+          pointsGroup.children[k].geometry.dispose();
+          pointsGroup.children[k].geometry = geometry;
+        }
+        
+        loadingIndicator.classList.add('hidden');
+      }, 0);
+    }
+    
+    // Event listeners
+    document.getElementById('alpha-slider').addEventListener('input', function(event) {
+      document.getElementById('alpha-value').textContent = event.target.value;
+      updateColors(); // Only update colors, not positions
+    });
+    
+    document.getElementById('points-slider').addEventListener('input', function(event) {
+      document.getElementById('points-value').textContent = event.target.value;
+      generatePointsOnce(); // Regenerate all points
+    });
+    
+    document.getElementById('show-simplex').addEventListener('change', drawSimplex);
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      const newWidth = container.clientWidth;
+      const newHeight = container.clientHeight;
+      
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newWidth, newHeight);
+    });
+    
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    
+    // Initialize
+    generatePointsOnce();
+    drawSimplex();
+    animate();
+  </script>
+</body>
+</html>
