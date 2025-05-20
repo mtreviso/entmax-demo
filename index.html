@@ -218,33 +218,33 @@
     <div class="mt-8 bg-white rounded-lg shadow-md p-6">
       <h2 class="text-xl font-bold text-indigo-800 mb-4">Mathematical definition of α-entmax</h2>
       <div class="math-container">
-        <p>For \(\alpha > 1\), the \(\alpha\)-entmax transformation of a score vector
-        \(\mathbf{z} \in \mathbb{R}^m\) is defined as:</p>
+        <p>The \(\alpha\)-entmax transformation of a score vector
+        \(\boldsymbol{z} \in \mathbb{R}^n\) is defined as:</p>
         
         \[
-        \alpha\text{-entmax}(\mathbf{z})
+        \alpha\text{-entmax}(\boldsymbol{z})
         =
-        \arg\max_{\mathbf{p} \in \triangle^m}
-        \Bigl(\mathbf{p}^\top \mathbf{z} + H_\alpha(\mathbf{p})\Bigr),
+        \arg\max_{\boldsymbol{p} \,\in\, \triangle_n}
+        \boldsymbol{p}^\top \boldsymbol{z} + H_\alpha(\boldsymbol{p}),
         \quad
-        \triangle^m
-        = \bigl\{\mathbf{p} \in \mathbb{R}^m_{\ge 0}:\sum_i p_i = 1\bigr\},
+        \triangle_n
+        = \bigl\{\boldsymbol{p} \in \mathbb{R}^n_{+}:\sum_{i=1}^n p_i = 1\bigr\},
         \]
         
-        <p class="mt-4">where \(H_\alpha(\mathbf{p})\) is the Tsallis(\(\alpha\)) entropy. A known closed form for
+        <p class="mt-4">where \(H_\alpha(\boldsymbol{p})\) is the Tsallis(\(\alpha\)) entropy. The closed form for
         \(\alpha\text{-entmax}\) with \(\alpha > 1\) is:</p>
         
         \[
         p_i^\star
         =
-        \bigl[(\alpha-1)\,z_i - \tau(\mathbf{z})\bigr]_+^{\tfrac{1}{\alpha-1}},
+        \bigl[(\alpha-1)\,z_i - \tau(\boldsymbol{z})\bigr]_+^{\tfrac{1}{\alpha-1}},
         \quad
-        \sum_{i=1}^m p_i^\star = 1,
+        \sum_{i=1}^n p_i^\star = 1,
         \quad
         [\cdot]_+ = \max(0,\cdot).
         \]
         
-        <p class="mt-4">Here, \(\tau(\mathbf{z})\) is chosen so that \(\mathbf{p}^\star\) sums to 1.</p>
+        <p class="mt-4">Here, \(\tau(\boldsymbol{z})\) is chosen so that \(\boldsymbol{p}^\star\) sums to 1.</p>
       </div>
       
       <div class="mt-6 border-t pt-4">
@@ -535,20 +535,20 @@
       const z_tilde = z.map(zi => (alpha - 1) * zi);
       
       // Find max value
-      const z_max = Math.max(...z_tilde);
+      const z_nax = Math.max(...z_tilde);
       
       // Initial bounds for tau
-      let tau_l = z_max - 1;
-      let tau_r = z_max - Math.pow(n, 1 - alpha);
-      let old_tau_m = Infinity;
-      let tau_m;
+      let tau_l = z_nax - 1;
+      let tau_r = z_nax - Math.pow(n, 1 - alpha);
+      let old_tau_n = Infinity;
+      let tau_n;
       
       // Binary search for tau
       for (let t = 0; t < T; t++) {
-        tau_m = (tau_l + tau_r) / 2;
+        tau_n = (tau_l + tau_r) / 2;
         
         // Compute probabilities
-        const p = z_tilde.map(zi => Math.max(0, zi - tau_m) ** (1 / (alpha - 1)));
+        const p = z_tilde.map(zi => Math.max(0, zi - tau_n) ** (1 / (alpha - 1)));
         
         // Check sum constraint
         const p_sum = p.reduce((a, b) => a + b, 0);
@@ -556,20 +556,20 @@
         
         // Update bounds
         if (!cond) {
-          tau_l = tau_m;
+          tau_l = tau_n;
         } else {
-          tau_r = tau_m;
+          tau_r = tau_n;
         }
         
         // Check convergence
-        if (Math.abs(tau_m - old_tau_m) < eps) {
+        if (Math.abs(tau_n - old_tau_n) < eps) {
           break;
         }
-        old_tau_m = tau_m;
+        old_tau_n = tau_n;
       }
       
       // Final probabilities
-      const p = z_tilde.map(zi => Math.max(0, zi - tau_m) ** (1 / (alpha - 1)));
+      const p = z_tilde.map(zi => Math.max(0, zi - tau_n) ** (1 / (alpha - 1)));
       
       // Calculate Tsallis entropy: (1 - sum(p_i^α)) / (α - 1)
       const tsallisEntropy = (1 - p.reduce((sum, pi) => sum + Math.pow(pi, alpha), 0)) / (alpha - 1);
@@ -577,7 +577,7 @@
       // Get max probability
       const maxProb = Math.max(...p);
       
-      return { p, tau: tau_m, tsallisEntropy, maxProb };
+      return { p, tau: tau_n, tsallisEntropy, maxProb };
     }
     
     // Calculate support size using entmax_bisect
