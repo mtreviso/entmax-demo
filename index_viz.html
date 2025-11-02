@@ -956,7 +956,6 @@ function updateFTauPlot(){
   };
 
 
-
   const config = {displayModeBar: false, responsive: true};
   Plotly.newPlot('plot-ftau', traces, layout, config);
 
@@ -1081,37 +1080,35 @@ function updateConvergencePlot(){
   const alpha = parseFloat(document.getElementById('alpha-conv').value);
   const tauInit = parseFloat(document.getElementById('tau-init').value);
   const method = document.getElementById('method-conv').value;
-  
+
   document.getElementById('alpha-conv-value').textContent = alpha.toFixed(2);
-  
   if (!scores.length) return;
 
-  // Update tau init range
   updateTauInitRange();
 
-  // Find optimal tau
+  // bisection bounds
+  const n = scores.length;
+  const maxScore = Math.max(...scores);
+  const maxVal = maxScore * (alpha - 1);
+  const tauLo = maxVal - 1;
+  const tauHi = maxVal - Math.pow(1 / n, alpha - 1);
+
   const tauStar = findTau(scores, alpha);
 
-  // Calculate plot range with padding
   const minZ = Math.min(...scores);
   const maxZ = Math.max(...scores);
   const tmin = minZ - 1;
   const tmax = maxZ + 1;
-  
-  const taus = []; 
-  for (let i=0;i<=400;i++) taus.push(tmin + (tmax-tmin)*i/400);
+
+  const taus = [];
+  for (let i=0;i<=400;i++) taus.push(tmin + (tmax - tmin)*i/400);
   const fVals = taus.map(t => f(scores, t, alpha));
 
+  // iterations
   let iters;
   if (method==='newton') iters = newtonMethod(scores, alpha, tauInit, 25);
   else if (method==='bisection') iters = bisectionMethod(scores, alpha, 30);
   else if (method==='secant') {
-    // Use two points within the valid range for secant
-    const n = scores.length;
-    const maxScore = Math.max(...scores);
-    const maxVal = maxScore * (alpha - 1);
-    const tauLo = maxVal - 1;
-    const tauHi = maxVal - Math.pow(1 / n, alpha - 1);
     const tau0 = tauLo + (tauHi - tauLo) * 0.3;
     const tau1 = tauLo + (tauHi - tauLo) * 0.7;
     iters = secantMethod(scores, alpha, tau0, tau1, 25);
@@ -1119,32 +1116,19 @@ function updateConvergencePlot(){
     iters = halleyMethod(scores, alpha, tauInit, 25);
   }
 
-  // Calculate f(tau) range INCLUDING the iteration points
   const allFVals = [...fVals, ...iters.map(it => it.f)];
   const fMin = Math.min(...allFVals);
   const fMax = Math.max(...allFVals);
   const fPadding = Math.max((fMax - fMin) * 0.2, 0.5);
 
   const curve = {
-    x:taus, 
-    y:fVals, 
-    type:'scatter', 
-    mode:'lines', 
-    name:'f(τ)',
-    line: {color: 'blue', width: 2}
-  };
-
-  // Iteration markers with numbers inside
-  const markerTrace = {
-    x: iters.map(p => p.tau),
-    y: iters.map(p => p.f),
+    x: taus,
+    y: fVals,
     type: 'scatter',
-    mode: 'markers+text',
-    marker: {size: 24, color: 'red', line: {width: 2, color: 'darkred'}},
-    text: iters.map(p => String(p.iter)),
-    textposition: 'middle center',
-    textfont: {color: 'white', size: 11, family: 'Arial Black'},
-    name: 'Iterations'
+    mode: 'lines',
+    name: 'f(τ)',
+    line: {color: 'blue', width: 2},
+    visible: legendState['convergence']['f(τ)'] !== false
   };
 
   const optimalTauLine = {
@@ -1152,100 +1136,125 @@ function updateConvergencePlot(){
     y: [fMin - fPadding, fMax + fPadding],
     type: 'scatter',
     mode: 'lines',
-    line: {
-      color: 'gold',
-      width: 3,
-      dash: 'dot'
-    },
+    line: {color: 'gold', width: 3, dash: 'dot'},
     showlegend: false,
-    hoverinfo: 'skip',
+    hoverinfo: 'skip'
   };
 
-  // Check legend state
-  const curveVisible = legendState['convergence']['f(τ)'] !== false;
-  const markerVisible = legendState['convergence']['Iterations'] !== false;
-
-  const traces = [
-    optimalTauLine, 
-    {...curve, visible: curveVisible},
-    {...markerTrace, visible: markerVisible},
-  ];
-
-  // Create arrow annotations
+  // arrows: tip slightly above the dot
   const annotations = [];
+  const arrowDY = (fMax - fMin) * 0.04;  // small vertical offset
   for (let i = 0; i < iters.length - 1; i++) {
     const from = iters[i];
-    const to = iters[i + 1];
-    
+    const to = iters[i+1];
     annotations.push({
       x: to.tau,
-      y: to.f,
+      y: to.f + arrowDY,
       ax: from.tau,
-      ay: from.f,
+      ay: from.f + arrowDY,
       xref: 'x',
       yref: 'y',
       axref: 'x',
       ayref: 'y',
       showarrow: true,
-      arrowhead: 2,
+      arrowhead: 1,
       arrowsize: 1,
       arrowwidth: 2,
-      arrowcolor: 'rgba(255, 100, 100, 0.6)'
+      arrowcolor: 'rgba(255, 100, 100, 0.9)',
+      standoff: 4
     });
   }
 
-  // Add annotation for optimal tau
-  annotations.push({
-    x: tauStar,
-    y: fMin - fPadding * 0.5,
-    text: `τ* = ${tauStar.toFixed(4)}`,
-    showarrow: false,
-    font: {size: 14, color: 'gold', family: 'Arial Black'},
-    bgcolor: 'rgba(0, 0, 0, 0.7)',
-    borderpad: 4
-  });
+  // τ*, τ_lo, τ_hi labels
+  annotations.push(
+    {
+      x: tauStar,
+      y: fMin - fPadding * 0.6,
+      text: `τ* = ${tauStar.toFixed(4)}`,
+      showarrow: false,
+      font: {size: 12, color: 'black'},
+      bgcolor: 'rgba(0,0,0,0.3)',
+      borderpad: 3
+    },
+    {
+      x: tauLo,
+      y: fMax + fPadding,
+      text: `τ_lo = ${tauLo.toFixed(4)}`,
+      showarrow: false,
+      font: {size: 11, color: 'black'},
+      bgcolor: 'rgba(0,0,0,0.3)',
+      borderpad: 3
+    },
+    {
+      x: tauHi,
+      y: fMax + fPadding,
+      text: `τ_hi = ${tauHi.toFixed(4)}`,
+      showarrow: false,
+      font: {size: 11, color: 'black'},
+      bgcolor: 'rgba(0,0,0,0.3)',
+      borderpad: 3
+    }
+  );
 
   const layout = {
-    title:`Convergence — ${method} (Final: τ=${iters[iters.length-1].tau.toFixed(4)}, f(τ)=${iters[iters.length-1].f.toFixed(6)})`,
-    xaxis:{title:'τ', range: [tmin, tmax]}, 
-    yaxis:{title:'f(τ)', range: [fMin - fPadding, fMax + fPadding]},
-    annotations: annotations,
+    title: `Convergence — ${method} (Final: τ=${iters[iters.length-1].tau.toFixed(4)}, f(τ)=${iters[iters.length-1].f.toFixed(6)})`,
+    xaxis: {title: 'τ', range: [tmin, tmax]},
+    yaxis: {title: 'f(τ)', range: [fMin - fPadding, fMax + fPadding]},
     shapes: [
-      // Horizontal line at y=0
       {
-        type: 'line',
-        x0: tmin,
-        x1: tmax,
-        y0: 0,
-        y1: 0,
-        line: {
-          color: 'black',
-          width: 2,
-          dash: 'dash'
-        }
+        type: 'rect',
+        x0: tauLo,
+        x1: tauHi,
+        y0: fMin - fPadding,
+        y1: fMax + fPadding,
+        fillcolor: 'gold',
+        opacity: 0.15,
+        line: {width: 0},
+        layer: 'below'
       },
-      // // Vertical line at optimal tau
       // {
       //   type: 'line',
-      //   x0: tauStar,
-      //   x1: tauStar,
-      //   y0: fMin - fPadding,
-      //   y1: fMax + fPadding,
-      //   line: {
-      //     color: 'gold',
-      //     width: 3,
-      //     dash: 'dot'
-      //   },
-      //   layer: 'below'
+      //   x0: tmin,
+      //   x1: tmax,
+      //   y0: 0,
+      //   y1: 0,
+      //   line: {color: 'black', width: 2, dash: 'dash'}
       // }
-    ]
+    ],
+    annotations: annotations
   };
 
   const config = {displayModeBar: false, responsive: true};
-  Plotly.newPlot('plot-convergence', traces, layout, config);
+
+  // one trace per iteration, so each number stays with its dot
+  const iterationTraces = iters.map((p, idx) => ({
+    x: [p.tau],
+    y: [p.f],
+    type: 'scatter',
+    mode: 'markers+text',
+    marker: {
+      size: 20,
+      color: 'red',
+      line: {width: 1, color: 'darkred'}
+    },
+    text: [String(idx)],
+    textposition: 'middle center',
+    textfont: {color: 'white', size: 9, family: 'Arial Black'},
+    name: idx === 0 ? 'Iterations' : undefined, // legend only once
+    showlegend: idx === 0,
+    visible: legendState['convergence']['Iterations'] !== false
+  }));
+
+  Plotly.newPlot(
+    'plot-convergence',
+    [optimalTauLine, curve, ...iterationTraces],  // later iters on top
+    layout,
+    config
+  );
 
   setupLegendClickHandler('plot-convergence', 'convergence');
 }
+
 
 // ======== Legend State Management ========
 function setupLegendClickHandler(plotId, stateKey){
