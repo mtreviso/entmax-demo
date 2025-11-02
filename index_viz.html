@@ -2,7 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>α-entmax Complete Visualizations</title>
+  <title>α-entmax Viz</title>
+  <link rel="icon" href="alpha.png">
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
@@ -334,6 +335,53 @@
         </div>
 
         <div id="plot-convergence" class="viz-container mb-4"></div>
+      </div>
+    </div>
+
+
+    <!-- Mathematical Definitions -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-bold text-indigo-800 mb-4">Mathematical definition of α-entmax</h2>
+      <div class="math-container">
+        <p>The \(\alpha\)-entmax transformation of a score vector
+        \(\boldsymbol{z} \in \mathbb{R}^n\) is defined as:</p>
+        
+        \[
+        \alpha\text{-entmax}(\boldsymbol{z})
+        =
+        \arg\max_{\boldsymbol{p} \,\in\, \triangle_n}
+        \boldsymbol{p}^\top \boldsymbol{z} + H_\alpha(\boldsymbol{p}),
+        \quad
+        \triangle_n
+        = \bigl\{\boldsymbol{p} \in \mathbb{R}^n_{+}:\sum_{i=1}^n p_i = 1\bigr\},
+        \]
+        
+        <p class="mt-4">where \(H_\alpha(\boldsymbol{p})\) is the Tsallis(\(\alpha\)) entropy. The closed form for
+        \(\alpha\text{-entmax}\) with \(\alpha > 1\) is:</p>
+        
+        \[
+        p_i^\star
+        =
+        \bigl[(\alpha-1)\,z_i - \tau(\boldsymbol{z})\bigr]_+^{\tfrac{1}{\alpha-1}},
+        \quad
+        \sum_{i=1}^n p_i^\star = 1,
+        \quad
+        [\cdot]_+ = \max(0,\cdot).
+        \]
+        
+        <p class="mt-4">Here, \(\tau(\boldsymbol{z})\) is chosen so that \(\boldsymbol{p}^\star\) sums to 1.</p>
+      </div>
+      
+      <div class="mt-6 border-t pt-4">
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Citation</h3>
+        <p class="text-sm text-gray-600">
+          Ben Peters, Vlad Niculae, and André F. T. Martins. 2019. Sparse sequence-to-sequence models. 
+          In <em>Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</em>, 
+          pages 1504–1519, Florence, Italy. Association for Computational Linguistics.
+          <a href="https://arxiv.org/abs/1905.05702" class="text-indigo-600 hover:text-indigo-800" target="_blank">
+            https://arxiv.org/abs/1905.05702
+          </a>
+        </p>
       </div>
     </div>
   </div>
