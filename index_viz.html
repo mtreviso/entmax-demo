@@ -479,8 +479,6 @@ function fDeriv(scores, tau, alpha, order){
   const X = scores.map(s => s * (alpha - 1));
   let coeff = 1;
   for (let k=0;k<order;k++){ coeff *= (r - k); }
-  // CRITICAL: derivatives of f(tau) have alternating signs!
-  // f'(tau) is negative, f''(tau) is positive, etc.
   const sign = Math.pow(-1, order);
   let sum = 0;
   for (const xi of X){
@@ -786,28 +784,31 @@ const presets = {
 function updateFTauPlot(){
   const preset = document.getElementById('preset-ftau').value;
   const scoresInput = document.getElementById('scores-ftau');
-  
+
   if (preset !== 'custom') {
     scoresInput.value = presets[preset];
   }
-  
+
   const scoresText = scoresInput.value;
   const scores = scoresText.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
   const alpha = parseFloat(document.getElementById('alpha-ftau').value);
-  
+
   document.getElementById('alpha-ftau-value').textContent = alpha.toFixed(2);
-  
+
   if (!scores.length) return;
 
-  const X = scores.map(s => s * (alpha - 1));
-  const maxVal = Math.max(...X);
-  const tauMin = maxVal - Math.pow(1, alpha - 1);
-  const tauMax = maxVal - Math.pow(1 / scores.length, alpha - 1);
-  
-  // Add padding to the range for better visualization
-  const padding = (tauMax - tauMin) * 0.1;
+  // === same bounds as in convergence tab ===
+  const n = scores.length;
+  const maxScore = Math.max(...scores);
+  const maxVal = maxScore * (alpha - 1);
+  const tauLo = maxVal - 1;                    // lower bisection bound
+  const tauHi = maxVal - Math.pow(1 / n, alpha - 1); // upper bisection bound
+
+  // x range slightly extended for nicer view
+  const paddingBnd = (tauHi - tauLo) * 0.1;
   const taus = [];
-  for (let i=0;i<=400;i++) taus.push(tauMin - padding + (tauMax - tauMin + 2*padding)*i/400);
+  for (let i=0;i<=400;i++)
+    taus.push((tauLo - paddingBnd) + (tauHi - tauLo + 2*paddingBnd)*i/400);
 
   const fVals = taus.map(t => f(scores, t, alpha));
   const d1 = taus.map(t => fDeriv(scores, t, alpha, 1));
@@ -816,67 +817,104 @@ function updateFTauPlot(){
   const d4 = taus.map(t => fDeriv(scores, t, alpha, 4));
   const tauStar = findTau(scores, alpha);
 
-  // Update optimal tau display
   document.getElementById('tau-star-value').textContent = tauStar.toFixed(4);
 
-  // Check which derivatives to show
   const showF = document.getElementById('show-f').checked;
   const showD1 = document.getElementById('show-d1').checked;
   const showD2 = document.getElementById('show-d2').checked;
   const showD3 = document.getElementById('show-d3').checked;
   const showD4 = document.getElementById('show-d4').checked;
 
-  const allTraces = [
-    {x:taus, y:fVals, type:'scatter', mode:'lines', name:'f(τ)', visible: showF, line:{width:2}},
-    {x:taus, y:d1, type:'scatter', mode:'lines', name:"f'(τ)", visible: showD1, line:{width:2}},
-    {x:taus, y:d2, type:'scatter', mode:'lines', name:"f''(τ)", visible: showD2, line:{width:2}},
-    {x:taus, y:d3, type:'scatter', mode:'lines', name:"f'''(τ)", visible: showD3, line:{width:2}},
-    {x:taus, y:d4, type:'scatter', mode:'lines', name:"f⁽⁴⁾(τ)", visible: showD4, line:{width:2}},
+  const traces = [
+    {x:taus, y:fVals, type:'scatter', mode:'lines', name:'f(τ)', visible: legendState['ftau']['f(τ)'] !== false && showF, line:{width:2}},
+    {x:taus, y:d1,    type:'scatter', mode:'lines', name:"f'(τ)", visible: legendState['ftau']["f'(τ)"] !== false && showD1, line:{width:2}},
+    {x:taus, y:d2,    type:'scatter', mode:'lines', name:"f''(τ)", visible: legendState['ftau']["f''(τ)"] !== false && showD2, line:{width:2}},
+    {x:taus, y:d3,    type:'scatter', mode:'lines', name:"f'''(τ)", visible: legendState['ftau']["f'''(τ)"] !== false && showD3, line:{width:2}},
+    {x:taus, y:d4,    type:'scatter', mode:'lines', name:"f⁽⁴⁾(τ)", visible: legendState['ftau']["f⁽⁴⁾(τ)"] !== false && showD4, line:{width:2}},
   ];
 
-  // Filter visible traces for legend state
-  const traces = allTraces.map(trace => {
-    const visible = legendState['ftau'][trace.name] !== false && trace.visible !== false;
-    return {...trace, visible: visible};
-  });
-
-  // Calculate y-axis range from visible traces
-  const visibleYValues = [];
-  traces.forEach((trace, idx) => {
-    if (trace.visible !== false) {
-      if (idx === 0 && showF) visibleYValues.push(...fVals);
-      if (idx === 1 && showD1) visibleYValues.push(...d1);
-      if (idx === 2 && showD2) visibleYValues.push(...d2);
-      if (idx === 3 && showD3) visibleYValues.push(...d3);
-      if (idx === 4 && showD4) visibleYValues.push(...d4);
-    }
-  });
-  
-  const yMin = visibleYValues.length > 0 ? Math.min(...visibleYValues) : -1;
-  const yMax = visibleYValues.length > 0 ? Math.max(...visibleYValues) : 1;
-  const yPadding = (yMax - yMin) * 0.1;
+  // y-range based on visible traces
+  const visibleYs = [];
+  if (traces[0].visible) visibleYs.push(...fVals);
+  if (traces[1].visible) visibleYs.push(...d1);
+  if (traces[2].visible) visibleYs.push(...d2);
+  if (traces[3].visible) visibleYs.push(...d3);
+  if (traces[4].visible) visibleYs.push(...d4);
+  const yMin = visibleYs.length ? Math.min(...visibleYs) : -1;
+  const yMax = visibleYs.length ? Math.max(...visibleYs) : 1;
+  const yPad = (yMax - yMin) * 0.1 || 0.5;
 
   const layout = {
     title:`f(τ) and higher derivatives (α=${alpha.toFixed(2)})`,
-    xaxis:{title:'τ'}, 
-    yaxis:{title:'value', range:[yMin - yPadding, yMax + yPadding]},
-    shapes:[{
-      type:'rect',
-      x0:tauStar - 0.005,
-      x1:tauStar + 0.005,
-      y0:yMin - yPadding,
-      y1:yMax + yPadding,
-      fillcolor:'gold',
-      opacity:0.3,
-      line:{width:0}
-    }]
+    xaxis:{title:'τ'},
+    yaxis:{title:'value', range:[yMin - yPad, yMax + yPad]},
+    shapes: [
+      // shared bisection band
+      {
+        type: 'rect',
+        x0: tauLo,
+        x1: tauHi,
+        y0: yMin - yPad,
+        y1: yMax + yPad,
+        // fillcolor: 'rgba(135, 206, 250, 0.25)', // light blue
+        fillcolor:'gold',
+        opacity: 0.15,
+        line: {width:0},
+        layer: 'below'
+      },
+      // vertical line for τ* (like convergence)
+      {
+        type: 'line',
+        x0: tauStar,
+        x1: tauStar,
+        y0: yMin - yPad,
+        y1: yMax + yPad,
+        line: {
+          color: 'gold',
+          width: 3,
+          dash: 'dot'
+        }
+      }
+    ],
+    annotations: [
+      {
+        x: tauStar,
+        y: yMin - yPad * 0.4,
+        text: `τ* = ${tauStar.toFixed(4)}`,
+        showarrow: false,
+        font: {size: 12, color: 'black'},
+        bgcolor: 'rgba(0,0,0,0.3)',
+        borderpad: 3
+      },
+      {
+        x: tauLo,
+        y: yMax + yPad,
+        text: `τ_lo = ${tauLo.toFixed(4)}`,
+        showarrow: false,
+        font: {size: 11, color: 'black'},
+        bgcolor: 'rgba(0,0,0,0.3)',
+        borderpad: 3
+      },
+      {
+        x: tauHi,
+        y: yMax + yPad,
+        text: `τ_hi = ${tauHi.toFixed(4)}`,
+        showarrow: false,
+        font: {size: 11, color: 'black'},
+        bgcolor: 'rgba(0,0,0,0.3)',
+        borderpad: 3
+      }
+    ]
   };
+
+
 
   const config = {displayModeBar: false, responsive: true};
   Plotly.newPlot('plot-ftau', traces, layout, config);
-  
+
   setupLegendClickHandler('plot-ftau', 'ftau');
 }
+
 
 // ======== Convergence ========
 function fPrime(scores, tau, alpha){ return fDeriv(scores, tau, alpha, 1); }
