@@ -1556,7 +1556,14 @@ document.querySelectorAll('.tab-button').forEach(btn=> {
 });
 
 // f(τ) events
-document.getElementById('preset-ftau').addEventListener('change', updateFTauPlot());
+document.getElementById('preset-ftau').addEventListener('change', () => {
+  const v = document.getElementById('preset-ftau').value;
+  const box = document.getElementById('scores-ftau');
+  if (v !== 'custom') {
+    box.value = presets[v];
+  }
+  updateFTauPlot()
+});
 document.getElementById('scores-ftau').addEventListener('change', () => {
   document.getElementById('preset-ftau').value = 'custom';
   updateFTauPlot();
