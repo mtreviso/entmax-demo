@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>α-entmax Viz</title>
+  <title>α-entmax viz</title>
   <link rel="icon" href="alpha.png">
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,94 +15,50 @@
       border-radius: 8px; 
       box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
     }
-    .small-viz { height: 460px; }
+    .small-viz { 
+      height: 460px; 
+    }
+    /* 1. undo Tailwind's svg: block for Plotly only */
+    .js-plotly-plot .plotly .main-svg,
+    .js-plotly-plot .plotly svg {
+      display: inline-block !important;
+    }
+
+    /* 2. keep modebar in one line, top-right */
+    .js-plotly-plot .plotly .modebar {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      top: 4px !important;
+      right: 4px !important;
+    }
+
+    /* 3. make groups horizontal */
+    .js-plotly-plot .plotly .modebar-group {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen p-6">
   <div class="max-w-7xl mx-auto">
     <header class="mb-8 text-center">
-      <h1 class="text-4xl font-bold text-indigo-800 mb-2">α-entmax Viz</h1>
+      <h1 class="text-4xl font-bold text-indigo-800 mb-2">α-entmax viz</h1>
       <p class="text-gray-600">2d, 3d, convergence</p>
     </header>
 
     <!-- Main Tabs -->
     <div class="mb-6 border-b border-gray-200">
       <nav class="flex space-x-4 overflow-x-auto">
-        <button class="tab-button px-4 py-2 font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="2d-slices">2D Slices</button>
-        <button class="tab-button px-4 py-2 font-medium border-b-2 border-indigo-600 text-indigo-600" data-tab="3d-surfaces">3D Surfaces</button>
+        <button class="tab-button px-4 py-2 font-medium border-b-2 border-indigo-600 text-indigo-600" data-tab="2d-slices">2D Slices</button>
+        <button class="tab-button px-4 py-2 font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="3d-surfaces">3D Surfaces</button>
         <button class="tab-button px-4 py-2 font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="comparison">3D Side-by-Side</button>
         <button class="tab-button px-4 py-2 font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="f-tau">f(τ) Visualization</button>
         <button class="tab-button px-4 py-2 font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="convergence">Convergence</button>
       </nav>
     </div>
 
-    <!-- 3D Surfaces Tab -->
-    <div class="tab-panel" data-panel="3d-surfaces">
-      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">3D Surface: p₁(z₂, z₃) with z₁=0</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Transformation</label>
-            <select id="method-3d" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-              <option value="entmax">α-entmax</option>
-              <option value="softmax">Softmax</option>
-              <option value="sparsemax">Sparsemax</option>
-              <option value="normmax">Normmax</option>
-              <option value="topk">Top-k</option>
-              <option value="relu-norm">ReLU Norm</option>
-              <option value="budget">Budget</option>
-            </select>
-          </div>
-          <div id="param-alpha-3d">
-            <label class="block text-sm font-medium text-gray-700 mb-2">α (entmax/normmax)</label>
-            <input type="range" id="alpha-3d" min="1.01" max="5" step="0.01" value="1.5" class="w-full">
-            <span id="alpha-3d-value" class="text-sm text-gray-600">1.50</span>
-          </div>
-          <div id="param-k-3d" class="hidden">
-            <label class="block text-sm font-medium text-gray-700 mb-2">k (top-k)</label>
-            <input type="range" id="k-3d" min="1" max="3" step="1" value="1" class="w-full">
-            <span id="k-3d-value" class="text-sm text-gray-600">1</span>
-          </div>
-          <div id="param-b-3d" class="hidden">
-            <label class="block text-sm font-medium text-gray-700 mb-2">b (ReLU norm)</label>
-            <input type="range" id="b-3d" min="0.1" max="5" step="0.1" value="1" class="w-full">
-            <span id="b-3d-value" class="text-sm text-gray-600">1.0</span>
-          </div>
-          <div id="param-budget-3d" class="hidden">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Budget (budget)</label>
-            <input type="range" id="budget-3d" min="0.5" max="3" step="0.1" value="1" class="w-full">
-            <span id="budget-3d-value" class="text-sm text-gray-600">1.0</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Output Component</label>
-            <select id="component-3d" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-              <option value="0">p₁</option>
-              <option value="1">p₂</option>
-              <option value="2">p₃</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">z range</label>
-            <input type="range" id="z-range" min="1" max="5" step="0.5" value="3" class="w-full">
-            <span id="z-range-value" class="text-sm text-gray-600">±3</span>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
-            <input type="range" id="resolution-3d" min="20" max="100" step="5" value="50" class="w-full">
-            <span id="resolution-3d-value" class="text-sm text-gray-600">50</span>
-          </div>
-        </div>
-
-        <div id="plot-3d-surface" class="viz-container"></div>
-      </div>
-    </div>
-
     <!-- 2D Slices Tab -->
-    <div class="tab-panel hidden" data-panel="2d-slices">
+    <div class="tab-panel" data-panel="2d-slices">
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">2D slice with selected methods (z₂…zₙ=0)</h2>
 
@@ -174,6 +130,71 @@
         </div>
 
         <div id="plot-2d-slice" class="viz-container"></div>
+      </div>
+    </div>
+
+    <!-- 3D Surfaces Tab -->
+    <div class="tab-panel hidden" data-panel="3d-surfaces">
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">3D Surface: p₁(z₂, z₃) with z₁=0</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Transformation</label>
+            <select id="method-3d" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="entmax">α-entmax</option>
+              <option value="softmax">Softmax</option>
+              <option value="sparsemax">Sparsemax</option>
+              <option value="normmax">Normmax</option>
+              <option value="topk">Top-k</option>
+              <option value="relu-norm">ReLU Norm</option>
+              <option value="budget">Budget</option>
+            </select>
+          </div>
+          <div id="param-alpha-3d">
+            <label class="block text-sm font-medium text-gray-700 mb-2">α (entmax/normmax)</label>
+            <input type="range" id="alpha-3d" min="1.01" max="5" step="0.01" value="1.5" class="w-full">
+            <span id="alpha-3d-value" class="text-sm text-gray-600">1.50</span>
+          </div>
+          <div id="param-k-3d" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-2">k (top-k)</label>
+            <input type="range" id="k-3d" min="1" max="3" step="1" value="1" class="w-full">
+            <span id="k-3d-value" class="text-sm text-gray-600">1</span>
+          </div>
+          <div id="param-b-3d" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-2">b (ReLU norm)</label>
+            <input type="range" id="b-3d" min="0.1" max="5" step="0.1" value="1" class="w-full">
+            <span id="b-3d-value" class="text-sm text-gray-600">1.0</span>
+          </div>
+          <div id="param-budget-3d" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Budget (budget)</label>
+            <input type="range" id="budget-3d" min="0.5" max="3" step="0.1" value="1" class="w-full">
+            <span id="budget-3d-value" class="text-sm text-gray-600">1.0</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Output Component</label>
+            <select id="component-3d" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="0">p₁</option>
+              <option value="1">p₂</option>
+              <option value="2">p₃</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">z range</label>
+            <input type="range" id="z-range" min="1" max="5" step="0.5" value="3" class="w-full">
+            <span id="z-range-value" class="text-sm text-gray-600">±3</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Resolution</label>
+            <input type="range" id="resolution-3d" min="20" max="100" step="5" value="50" class="w-full">
+            <span id="resolution-3d-value" class="text-sm text-gray-600">50</span>
+          </div>
+        </div>
+
+        <div id="plot-3d-surface" class="viz-container"></div>
       </div>
     </div>
 
@@ -253,6 +274,10 @@
               <option value="moderate" selected>Moderate (0.2, 0.5, 0.7, 0.9, 1.2)</option>
               <option value="extreme">Extreme (0, 1, 2, 3, 5)</option>
               <option value="negative">With negatives (-1, -0.5, 0, 0.5, 1)</option>
+              <option value="halley-diverge">Diverge (1.98)*3, (0.002)*10</option>
+              <option value="halley-diverge2">Diverge (1, 0.99, 0.99)</option>
+              <option value="halley-diverge3">Diverge (1, 1, 0.99)</option>
+              <option value="halley-diverge4">Diverge (9.01, 8.91, 8.91)</option>
             </select>
           </div>
           <div class="md:col-span-2">
@@ -308,11 +333,25 @@
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Root finding: choose a method</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div class="md:col-span-2">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Preset</label>
+            <select id="preset-conv" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="custom">Custom</option>
+              <option value="uniform">Uniform (0,0,0,0,0)</option>
+              <option value="moderate" selected>Moderate (0.2, 0.5, 0.7, 0.9, 1.2)</option>
+              <option value="extreme">Extreme (0, 1, 2, 3, 5)</option>
+              <option value="negative">With negatives (-1, -0.5, 0, 0.5, 1)</option>
+              <option value="halley-diverge">Diverge (1.98)*3, (0.002)*10</option>
+              <option value="halley-diverge2">Diverge (1, 0.99, 0.99)</option>
+              <option value="halley-diverge3">Diverge (1, 1, 0.99)</option>
+              <option value="halley-diverge4">Diverge (9.01, 8.91, 8.91)</option>
+            </select>
+          </div>
+          <div class="col-md">
             <label class="block text-sm font-medium text-gray-700 mb-2">Scores (comma-separated)</label>
             <input type="text" id="scores-conv" value="0.2, 0.5, 0.7, 0.9, 1.2" class="w-full px-3 py-2 border border-gray-300 rounded-md">
           </div>
-          <div>
+          <div class="col-sm">
             <label class="block text-sm font-medium text-gray-700 mb-2">α value</label>
             <input type="range" id="alpha-conv" min="1.01" max="5" step="0.01" value="1.5" class="w-full">
             <span id="alpha-conv-value" class="text-sm text-gray-600">1.50</span>
@@ -320,21 +359,24 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Method</label>
             <select id="method-conv" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-              <option value="newton" selected>Newton</option>
               <option value="bisection">Bisection</option>
+              <option value="newton">Newton</option>
+              <option value="halley" selected>Halley</option>
               <option value="secant">Secant</option>
-              <option value="halley">Halley</option>
             </select>
           </div>
         </div>
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Initial τ (restricted to theoretical bisection bounds)</label>
-          <input type="range" id="tau-init" min="0" max="1" step="0.01" value="0.5" class="w-full">
+          <input type="range" id="tau-init" min="0" max="1" step="0.0001" value="0.5" class="w-full">
           <span id="tau-init-value" class="text-sm text-gray-600">--</span>
         </div>
 
         <div id="plot-convergence" class="viz-container mb-4"></div>
+
+        <div id="solver-log" class="mt-4 bg-gray-900 text-gray-400 text-sm font-mono rounded-md p-3 h-40 overflow-y-auto"></div>
+
       </div>
     </div>
 
@@ -655,7 +697,8 @@ function update2DSliceAll(){
   document.getElementById('budget-val-value').textContent = B.toFixed(1);
 
   const z = []; 
-  for (let i=0;i<=300;i++) z.push(-3 + 6*i/300);
+  for (let i=0;i<=300;i++) 
+    z.push(-5 + 10*i/300);
   
   // Check which methods to show
   const showMethods = {
@@ -703,7 +746,12 @@ function update2DSliceAll(){
     yaxis:{title:'p₁', range:[0,1]}
   };
   
-  const config = {displayModeBar: false, responsive: true};
+  const config = {
+    displayModeBar: true,
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['toImage', 'lasso2d', 'select2d']
+  };
   Plotly.newPlot('plot-2d-slice', traces, layout, config);
   
   // Setup legend click handler
@@ -826,10 +874,23 @@ const presets = {
   'slight': '0.1, 0.2, 0.3, 0.4, 0.5',
   'moderate': '0.2, 0.5, 0.7, 0.9, 1.2',
   'extreme': '0, 1, 2, 3, 5',
-  'negative': '-1, -0.5, 0, 0.5, 1'
+  'negative': '-1, -0.5, 0, 0.5, 1',
+  'halley-diverge': '1.98 , 1.98 , 1.98 , 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002',
+  'halley-diverge2': '1, 0.99, 0.99',
+  'halley-diverge3': '1, 1, 0.99',
+  'halley-diverge4': '9.01, 8.91, 8.91',
 };
 
-function updateFTauPlot(){
+
+let ftauIsRedrawing = false;
+let ftauUserRange = null;   // {x0, x1}
+
+function updateFTauPlot(userRange) {
+  // if called from an input event, discard the event object
+  if (userRange && (userRange.x0 === undefined || userRange.x1 === undefined)) {
+    userRange = undefined;
+  }
+
   const preset = document.getElementById('preset-ftau').value;
   const scoresInput = document.getElementById('scores-ftau');
 
@@ -840,48 +901,64 @@ function updateFTauPlot(){
   const scoresText = scoresInput.value;
   const scores = scoresText.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
   const alpha = parseFloat(document.getElementById('alpha-ftau').value);
-
   document.getElementById('alpha-ftau-value').textContent = alpha.toFixed(2);
-
   if (!scores.length) return;
 
-  // === same bounds as in convergence tab ===
+  // UI change → forget previous zoom
+  // if (userRange === undefined) {
+  //   ftauUserRange = null;
+  // }
+
+  // bisection bounds
   const n = scores.length;
   const maxScore = Math.max(...scores);
   const maxVal = maxScore * (alpha - 1);
-  const tauLo = maxVal - 1;                    // lower bisection bound
-  const tauHi = maxVal - Math.pow(1 / n, alpha - 1); // upper bisection bound
+  const tauLo = maxVal - 1;
+  const tauHi = maxVal - Math.pow(1 / n, alpha - 1);
+  const tauStar = findTau(scores, alpha);
 
-  // x range slightly extended for nicer view
-  const paddingBnd = (tauHi - tauLo) * 0.1;
+  // base x-range
+  let x0 = tauLo - (tauHi - tauLo) * 2;
+  let x1 = tauHi + (tauHi - tauLo) * 2;
+
+  // user zoomed?
+  if (userRange) {
+    x0 = userRange.x0;
+    x1 = userRange.x1;
+    ftauUserRange = userRange;
+  } else if (ftauUserRange) {
+    x0 = ftauUserRange.x0;
+    x1 = ftauUserRange.x1;
+  }
+
+  // sample
+  const numPoints = 400;
   const taus = [];
-  for (let i=0;i<=400;i++)
-    taus.push((tauLo - paddingBnd) + (tauHi - tauLo + 2*paddingBnd)*i/400);
+  for (let i = 0; i <= numPoints; i++) {
+    taus.push(x0 + (x1 - x0) * i / numPoints);
+  }
 
   const fVals = taus.map(t => f(scores, t, alpha));
   const d1 = taus.map(t => fDeriv(scores, t, alpha, 1));
   const d2 = taus.map(t => fDeriv(scores, t, alpha, 2));
   const d3 = taus.map(t => fDeriv(scores, t, alpha, 3));
   const d4 = taus.map(t => fDeriv(scores, t, alpha, 4));
-  const tauStar = findTau(scores, alpha);
 
-  document.getElementById('tau-star-value').textContent = tauStar.toFixed(4);
-
-  const showF = document.getElementById('show-f').checked;
+  const showF  = document.getElementById('show-f').checked;
   const showD1 = document.getElementById('show-d1').checked;
   const showD2 = document.getElementById('show-d2').checked;
   const showD3 = document.getElementById('show-d3').checked;
   const showD4 = document.getElementById('show-d4').checked;
 
   const traces = [
-    {x:taus, y:fVals, type:'scatter', mode:'lines', name:'f(τ)', visible: legendState['ftau']['f(τ)'] !== false && showF, line:{width:2}},
-    {x:taus, y:d1,    type:'scatter', mode:'lines', name:"f'(τ)", visible: legendState['ftau']["f'(τ)"] !== false && showD1, line:{width:2}},
+    {x:taus, y:fVals, type:'scatter', mode:'lines', name:'f(τ)',   visible: legendState['ftau']['f(τ)']   !== false && showF,  line:{width:2}},
+    {x:taus, y:d1,    type:'scatter', mode:'lines', name:"f'(τ)",  visible: legendState['ftau']["f'(τ)"]  !== false && showD1, line:{width:2}},
     {x:taus, y:d2,    type:'scatter', mode:'lines', name:"f''(τ)", visible: legendState['ftau']["f''(τ)"] !== false && showD2, line:{width:2}},
-    {x:taus, y:d3,    type:'scatter', mode:'lines', name:"f'''(τ)", visible: legendState['ftau']["f'''(τ)"] !== false && showD3, line:{width:2}},
-    {x:taus, y:d4,    type:'scatter', mode:'lines', name:"f⁽⁴⁾(τ)", visible: legendState['ftau']["f⁽⁴⁾(τ)"] !== false && showD4, line:{width:2}},
+    {x:taus, y:d3,    type:'scatter', mode:'lines', name:"f'''(τ)",visible: legendState['ftau']["f'''(τ)"]!== false && showD3, line:{width:2}},
+    {x:taus, y:d4,    type:'scatter', mode:'lines', name:"f⁽⁴⁾(τ)",visible: legendState['ftau']["f⁽⁴⁾(τ)"]!== false && showD4, line:{width:2}},
   ];
 
-  // y-range based on visible traces
+  // y-range from visible
   const visibleYs = [];
   if (traces[0].visible) visibleYs.push(...fVals);
   if (traces[1].visible) visibleYs.push(...d1);
@@ -892,36 +969,31 @@ function updateFTauPlot(){
   const yMax = visibleYs.length ? Math.max(...visibleYs) : 1;
   const yPad = (yMax - yMin) * 0.1 || 0.5;
 
+  document.getElementById('tau-star-value').textContent = tauStar.toFixed(4);
+
   const layout = {
     title:`f(τ) and higher derivatives (α=${alpha.toFixed(2)})`,
-    xaxis:{title:'τ'},
-    yaxis:{title:'value', range:[yMin - yPad, yMax + yPad]},
+    xaxis: ftauUserRange ? {title:'τ'} : {title:'τ', range:[x0, x1]},
+    yaxis: ftauUserRange ? {title:'value'} : {title:'value', range:[yMin - yPad, yMax + yPad]},
     shapes: [
-      // shared bisection band
       {
         type: 'rect',
         x0: tauLo,
         x1: tauHi,
         y0: yMin - yPad,
         y1: yMax + yPad,
-        // fillcolor: 'rgba(135, 206, 250, 0.25)', // light blue
         fillcolor:'gold',
         opacity: 0.15,
         line: {width:0},
         layer: 'below'
       },
-      // vertical line for τ* (like convergence)
       {
         type: 'line',
         x0: tauStar,
         x1: tauStar,
         y0: yMin - yPad,
         y1: yMax + yPad,
-        line: {
-          color: 'gold',
-          width: 3,
-          dash: 'dot'
-        }
+        line: {color: 'gold', width: 3, dash: 'dot'}
       }
     ],
     annotations: [
@@ -955,33 +1027,61 @@ function updateFTauPlot(){
     ]
   };
 
+  const config = {
+    displayModeBar: true,
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['toImage', 'lasso2d', 'select2d']
+  };
 
-  const config = {displayModeBar: false, responsive: true};
-  Plotly.newPlot('plot-ftau', traces, layout, config);
+  ftauIsRedrawing = true;
+  Plotly.newPlot('plot-ftau', traces, layout, config).then(gd => {
+    gd.on('plotly_relayout', ev => {
+      if (ftauIsRedrawing) return;
+
+      // user zoom / pan
+      if (ev['xaxis.range[0]'] !== undefined && ev['xaxis.range[1]'] !== undefined) {
+        updateFTauPlot({
+          x0: ev['xaxis.range[0]'],
+          x1: ev['xaxis.range[1]']
+        });
+      }
+
+      // autoscale / double-click -> reset & redraw
+      if (
+        ev['xaxis.autorange'] === true ||
+        ev['yaxis.autorange'] === true ||
+        ev.autosize === true
+      ) {
+        updateFTauPlot();   // fresh ranges from data
+      }
+      
+    });
+    ftauIsRedrawing = false;
+  });
 
   setupLegendClickHandler('plot-ftau', 'ftau');
 }
 
 
 // ======== Convergence ========
-function fPrime(scores, tau, alpha){ return fDeriv(scores, tau, alpha, 1); }
+function fPrime(scores, tau, alpha){ 
+  return fDeriv(scores, tau, alpha, 1); 
+}
 
 function newtonMethod(scores, alpha, tauInit, maxIter=20){
   const iters = [];
+  const log = [];
   let tau = tauInit;
   for (let i=0;i<maxIter;i++){
     const fv = f(scores, tau, alpha);
     const fp = fPrime(scores, tau, alpha);
     iters.push({iter:i, tau, f:fv});
+    log.push(`Newton ${i}: tau=${tau.toFixed(6)}  f=${fv.toExponential(3)}  f'=${fp.toExponential(3)}`);
     if (Math.abs(fv) < 1e-9 || Math.abs(fp) < 1e-12) break;
     tau = tau - fv / fp;
   }
-  // Add final iteration if we didn't break on last iter
-  if (iters.length < maxIter) {
-    const fv = f(scores, tau, alpha);
-    iters.push({iter: iters.length, tau, f: fv});
-  }
-  return iters;
+  return {iters, log};
 }
 
 function bisectionMethod(scores, alpha, maxIter=30){
@@ -993,54 +1093,59 @@ function bisectionMethod(scores, alpha, maxIter=30){
   let b = maxVal - Math.pow(1 / n, alpha - 1);
   let fa = f(scores, a, alpha), fb = f(scores, b, alpha);
   const iters = [{iter:0, tau:a, f:fa}, {iter:1, tau:b, f:fb}];
+  const log = [
+    `Bisection 0: tau=${a.toFixed(6)}  f=${fa.toExponential(3)}`,
+    `Bisection 1: tau=${b.toFixed(6)}  f=${fb.toExponential(3)}`
+  ];
   for (let i=2;i<maxIter;i++){
     const m = 0.5*(a+b);
     const fm = f(scores, m, alpha);
     iters.push({iter:i, tau:m, f:fm});
+    log.push(`Bisection ${i}: tau=${m.toFixed(6)}  f=${fm.toExponential(3)}`);
     if (fa*fm <= 0){ b = m; fb = fm; } else { a = m; fa = fm; }
     if (Math.abs(fm) < 1e-9) break;
   }
-  return iters;
+  return {iters, log};
 }
 
 function secantMethod(scores, alpha, tau0, tau1, maxIter=20){
   const iters = [];
+  const log = [];
   let t0 = tau0, t1 = tau1;
   let f0 = f(scores, t0, alpha), f1 = f(scores, t1, alpha);
-  iters.push({iter:0, tau:t0, f:f0}); 
+  iters.push({iter:0, tau:t0, f:f0});
   iters.push({iter:1, tau:t1, f:f1});
+  log.push(`Secant 0: tau=${t0.toFixed(6)}  f=${f0.toExponential(3)}`);
+  log.push(`Secant 1: tau=${t1.toFixed(6)}  f=${f1.toExponential(3)}`);
   for (let i=2;i<maxIter;i++){
     const denom = (f1 - f0);
     if (Math.abs(denom) < 1e-12) break;
     const t2 = t1 - f1*(t1 - t0)/denom;
     const f2 = f(scores, t2, alpha);
     iters.push({iter:i, tau:t2, f:f2});
+    log.push(`Secant ${i}: tau=${t2.toFixed(6)}  f=${f2.toExponential(3)}`);
     if (Math.abs(f2) < 1e-9) break;
     t0=t1; f0=f1; t1=t2; f1=f2;
   }
-  // Secant already includes final iteration since it pushes before checking convergence
-  return iters;
+  return {iters, log};
 }
 
 function halleyMethod(scores, alpha, tauInit, maxIter=20){
   const iters = [];
+  const log = [];
   let tau = tauInit;
   for (let i=0;i<maxIter;i++){
     const fv = f(scores, tau, alpha);
     const fp = fPrime(scores, tau, alpha);
     const fpp = fSecondDeriv(scores, tau, alpha);
     iters.push({iter:i, tau, f:fv});
+    log.push(`Halley ${i}: tau=${tau.toFixed(6)}  f=${fv.toExponential(3)}  f'=${fp.toExponential(3)}  f''=${fpp.toExponential(3)}`);
     if (Math.abs(fv) < 1e-9 || Math.abs(fp) < 1e-12) break;
     const denom = fp - (fv * fpp) / (2 * fp);
     if (Math.abs(denom) < 1e-12) break;
     tau = tau - fv / denom;
   }
-  // Add final iteration if we didn't break on last iter
-  if (iters.length < maxIter) {
-    const fv = f(scores, tau, alpha);
-    iters.push({iter: iters.length, tau, f: fv});
-  }
-  return iters;
+  return {iters, log};
 }
 
 function updateTauInitRange(){
@@ -1074,7 +1179,27 @@ function updateTauInitRange(){
   document.getElementById('tau-init-value').textContent = `${tauInit.toFixed(4)} (range: [${tauLo.toFixed(4)}, ${tauHi.toFixed(4)}])`;
 }
 
-function updateConvergencePlot(){
+
+let convergenceIsRedrawing = false;
+let convergenceUserRange = null;   // {x0, x1} when user zooms
+
+function updateConvergencePlot(userRange) {
+
+  // if called from an input event, discard the event object
+  if (userRange && (userRange.x0 === undefined || userRange.x1 === undefined)) {
+    userRange = undefined;
+  }
+
+  // if we got a range from relayout, store it
+  if (userRange) {
+    convergenceUserRange = {
+      x0: userRange.x0,
+      x1: userRange.x1,
+      y0: userRange.y0 ?? (convergenceUserRange ? convergenceUserRange.y0 : null),
+      y1: userRange.y1 ?? (convergenceUserRange ? convergenceUserRange.y1 : null),
+    };
+  }
+
   const scoresText = document.getElementById('scores-conv').value;
   const scores = scoresText.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
   const alpha = parseFloat(document.getElementById('alpha-conv').value);
@@ -1084,37 +1209,59 @@ function updateConvergencePlot(){
   document.getElementById('alpha-conv-value').textContent = alpha.toFixed(2);
   if (!scores.length) return;
 
+  // UI change (no userRange passed) → forget previous zoom
+  // if (userRange === undefined) {
+  //   convergenceUserRange = null;
+  // }
+
   updateTauInitRange();
 
-  // bisection bounds
+  // bisection bounds...
   const n = scores.length;
   const maxScore = Math.max(...scores);
   const maxVal = maxScore * (alpha - 1);
   const tauLo = maxVal - 1;
   const tauHi = maxVal - Math.pow(1 / n, alpha - 1);
-
   const tauStar = findTau(scores, alpha);
 
-  const minZ = Math.min(...scores);
-  const maxZ = Math.max(...scores);
-  const tmin = minZ - 1;
-  const tmax = maxZ + 1;
+  // BASE range from data
+  let minZ = Math.min(...scores);
+  let maxZ = Math.max(...scores);
+  let tmin = minZ - 1;
+  let tmax = maxZ + 1;
 
+  // if user zoomed before, use that
+  if (userRange) {
+    tmin = userRange.x0;
+    tmax = userRange.x1;
+    convergenceUserRange = userRange;
+  } 
+  else if (convergenceUserRange) {
+    tmin = convergenceUserRange.x0;
+    tmax = convergenceUserRange.x1;
+  }
+
+  // make new taus on that range
   const taus = [];
-  for (let i=0;i<=400;i++) taus.push(tmin + (tmax - tmin)*i/400);
+  for (let i=0;i<=400;i++) {
+    taus.push(tmin + (tmax - tmin)*i/400);
+  }
+
   const fVals = taus.map(t => f(scores, t, alpha));
 
   // iterations
-  let iters;
-  if (method==='newton') iters = newtonMethod(scores, alpha, tauInit, 25);
-  else if (method==='bisection') iters = bisectionMethod(scores, alpha, 30);
+  let solverOut;
+  if (method==='newton') solverOut = newtonMethod(scores, alpha, tauInit, 25);
+  else if (method==='bisection') solverOut = bisectionMethod(scores, alpha, 30);
   else if (method==='secant') {
     const tau0 = tauLo + (tauHi - tauLo) * 0.3;
     const tau1 = tauLo + (tauHi - tauLo) * 0.7;
-    iters = secantMethod(scores, alpha, tau0, tau1, 25);
+    solverOut = secantMethod(scores, alpha, tau0, tau1, 25);
   } else {
-    iters = halleyMethod(scores, alpha, tauInit, 25);
+    solverOut = halleyMethod(scores, alpha, tauInit, 25);
   }
+  const iters = solverOut.iters;
+  writeSolverLog(solverOut.log);
 
   const allFVals = [...fVals, ...iters.map(it => it.f)];
   const fMin = Math.min(...allFVals);
@@ -1143,27 +1290,27 @@ function updateConvergencePlot(){
 
   // arrows: tip slightly above the dot
   const annotations = [];
-  const arrowDY = (fMax - fMin) * 0.04;  // small vertical offset
-  for (let i = 0; i < iters.length - 1; i++) {
-    const from = iters[i];
-    const to = iters[i+1];
-    annotations.push({
-      x: to.tau,
-      y: to.f + arrowDY,
-      ax: from.tau,
-      ay: from.f + arrowDY,
-      xref: 'x',
-      yref: 'y',
-      axref: 'x',
-      ayref: 'y',
-      showarrow: true,
-      arrowhead: 1,
-      arrowsize: 1,
-      arrowwidth: 2,
-      arrowcolor: 'rgba(255, 100, 100, 0.9)',
-      standoff: 4
-    });
-  }
+  // const arrowDY = (fMax - fMin) * 0.04;  // small vertical offset
+  // for (let i = 0; i < iters.length - 1; i++) {
+  //   const from = iters[i];
+  //   const to = iters[i+1];
+  //   annotations.push({
+  //     x: to.tau,
+  //     y: to.f + arrowDY,
+  //     ax: from.tau,
+  //     ay: from.f + arrowDY,
+  //     xref: 'x',
+  //     yref: 'y',
+  //     axref: 'x',
+  //     ayref: 'y',
+  //     showarrow: true,
+  //     arrowhead: 1,
+  //     arrowsize: 1,
+  //     arrowwidth: 2,
+  //     arrowcolor: 'rgba(255, 100, 100, 0.9)',
+  //     standoff: 4
+  //   });
+  // }
 
   // τ*, τ_lo, τ_hi labels
   annotations.push(
@@ -1196,17 +1343,26 @@ function updateConvergencePlot(){
     }
   );
 
+  let xaxis, yaxis;
+  if (convergenceUserRange) {
+    xaxis = { title: 'τ', range: [convergenceUserRange.x0, convergenceUserRange.x1] };
+    yaxis = { title: 'f(τ)', range: [convergenceUserRange.y0, convergenceUserRange.y1] };
+  } else {
+    xaxis = { title: 'τ', range: [tmin, tmax] };
+    yaxis = { title: 'f(τ)', range: [fMin - fPadding, fMax + fPadding] };
+  }
+
   const layout = {
     title: `Convergence — ${method} (Final: τ=${iters[iters.length-1].tau.toFixed(4)}, f(τ)=${iters[iters.length-1].f.toFixed(6)})`,
-    xaxis: {title: 'τ', range: [tmin, tmax]},
-    yaxis: {title: 'f(τ)', range: [fMin - fPadding, fMax + fPadding]},
+    xaxis: xaxis,
+    yaxis: yaxis,
     shapes: [
       {
         type: 'rect',
         x0: tauLo,
         x1: tauHi,
-        y0: fMin - fPadding,
-        y1: fMax + fPadding,
+        y0: (convergenceUserRange && convergenceUserRange.y0 != null) ? convergenceUserRange.y0 : (fMin - fPadding),
+        y1: (convergenceUserRange && convergenceUserRange.y1 != null) ? convergenceUserRange.y1 : (fMax + fPadding),
         fillcolor: 'gold',
         opacity: 0.15,
         line: {width: 0},
@@ -1224,7 +1380,12 @@ function updateConvergencePlot(){
     annotations: annotations
   };
 
-  const config = {displayModeBar: false, responsive: true};
+  const config = {
+    displayModeBar: true, 
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToRemove: ['toImage', 'lasso2d', 'select2d']
+  };
 
   // one trace per iteration, so each number stays with its dot
   const iterationTraces = iters.map((p, idx) => ({
@@ -1245,15 +1406,62 @@ function updateConvergencePlot(){
     visible: legendState['convergence']['Iterations'] !== false
   }));
 
+
+  convergenceIsRedrawing = true;   // guard: ignore the relayout that comes from newPlot
   Plotly.newPlot(
     'plot-convergence',
-    [optimalTauLine, curve, ...iterationTraces],  // later iters on top
+    [optimalTauLine, curve, ...iterationTraces],
     layout,
     config
-  );
+  ).then(gd => {
+    // listen, but DON'T redraw here
+    gd.on('plotly_relayout', ev => {
+      if (convergenceIsRedrawing) return;
+
+      const xr0 = ev['xaxis.range[0]'];
+      const xr1 = ev['xaxis.range[1]'];
+      const yr0 = ev['yaxis.range[0]'];
+      const yr1 = ev['yaxis.range[1]'];
+
+      // user zoom/pan -> replot AND keep
+      if (xr0 !== undefined || yr0 !== undefined) {
+
+        convergenceUserRange = {
+          x0: xr0 !== undefined ? xr0 : convergenceUserRange?.x0,
+          x1: xr1 !== undefined ? xr1 : convergenceUserRange?.x1,
+          y0: yr0 !== undefined ? yr0 : convergenceUserRange?.y0,
+          y1: yr1 !== undefined ? yr1 : convergenceUserRange?.y1,
+        };
+        updateConvergencePlot(convergenceUserRange);
+      }
+
+      // autoscale / double-click -> reset & redraw
+      if (
+        ev['xaxis.autorange'] === true ||
+        ev['yaxis.autorange'] === true ||
+        ev.autosize === true
+      ) {
+        convergenceUserRange = null;
+        updateConvergencePlot();   // fresh ranges from data
+      }
+
+    });
+    convergenceIsRedrawing = false;
+  });
+
 
   setupLegendClickHandler('plot-convergence', 'convergence');
 }
+
+
+function writeSolverLog(lines) {
+  const box = document.getElementById('solver-log');
+  if (!box) return;
+  box.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+
 
 
 // ======== Legend State Management ========
@@ -1348,14 +1556,14 @@ document.querySelectorAll('.tab-button').forEach(btn=> {
 });
 
 // f(τ) events
-document.getElementById('preset-ftau').addEventListener('change', updateFTauPlot);
+document.getElementById('preset-ftau').addEventListener('change', updateFTauPlot());
 document.getElementById('scores-ftau').addEventListener('change', () => {
   document.getElementById('preset-ftau').value = 'custom';
   updateFTauPlot();
 });
 document.getElementById('alpha-ftau').addEventListener('input', updateFTauPlot);
 ['show-f', 'show-d1', 'show-d2', 'show-d3', 'show-d4'].forEach(id => {
-  document.getElementById(id).addEventListener('change', updateFTauPlot);
+  document.getElementById(id).addEventListener('change', () => updateFTauPlot());
 });
 
 // Convergence events
@@ -1364,8 +1572,26 @@ document.getElementById('scores-conv').addEventListener('change', () => {
   updateConvergencePlot();
 });
 ['alpha-conv','tau-init','method-conv'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', updateConvergencePlot);
+  document.getElementById(id).addEventListener('input', () => updateConvergencePlot());
 });
+
+document.getElementById('preset-conv').addEventListener('change', () => {
+  const v = document.getElementById('preset-conv').value;
+  const box = document.getElementById('scores-conv');
+  if (v !== 'custom') {
+    box.value = presets[v];
+  }
+  updateTauInitRange();
+  updateConvergencePlot();
+});
+
+// keep your existing one
+document.getElementById('scores-conv').addEventListener('change', () => {
+  document.getElementById('preset-conv').value = 'custom';
+  updateTauInitRange();
+  updateConvergencePlot();
+});
+
 
 // Initial renders
 updateParamVisibility3D();
