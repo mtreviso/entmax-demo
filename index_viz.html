@@ -323,7 +323,7 @@
           </div>
         </div>
 
-        <div id="plot-ftau" class="viz-container small-viz"></div>
+        <div id="plot-ftau" class="viz-container"></div>
       </div>
     </div>
 
@@ -369,7 +369,7 @@
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Initial τ (restricted to theoretical bisection bounds)</label>
-          <input type="range" id="tau-init" min="0" max="1" step="0.0001" value="0.5" class="w-full">
+          <input type="range" id="tau-init" min="-10" max="10" step="0.0001" value="0.5" class="w-full">
           <span id="tau-init-value" class="text-sm text-gray-600">--</span>
         </div>
 
@@ -958,6 +958,32 @@ function updateFTauPlot(userRange) {
     {x:taus, y:d4,    type:'scatter', mode:'lines', name:"f⁽⁴⁾(τ)",visible: legendState['ftau']["f⁽⁴⁾(τ)"]!== false && showD4, line:{width:2}},
   ];
 
+  // --- hover helpers: tangent lines + intersection bullets (legend-ready)
+  const newtonColor = 'rgba(37, 99, 235, 0.85)'; // blue-600-ish, more opaque
+  const halleyColor = 'rgba(37, 99, 235, 0.45)'; // same hue, lighter
+
+  traces.push(
+    // Newton tangent (legend entry visible immediately)
+    { x: [null], y: [null], type: 'scatter', mode: 'lines',
+      line: { width: 2, dash: 'dash', color: newtonColor },
+      name: 'Newton tangent', hoverinfo: 'skip', showlegend: true, visible: 'legendonly' },
+
+    // Halley tangent (legend entry visible immediately)
+    { x: [null], y: [null], type: 'scatter', mode: 'lines',
+      line: { width: 2, dash: 'dot', color: halleyColor },
+      name: 'Halley tangent', hoverinfo: 'skip', showlegend: true, visible: 'legendonly' },
+
+    // Newton intersection bullet (no legend)
+    { x: [], y: [], type: 'scatter', mode: 'markers',
+      marker: { size: 10, color: newtonColor, line: { width: 1, color: newtonColor } },
+      name: 'Newton step', hoverinfo: 'skip', showlegend: false, visible: false },
+
+    // Halley intersection bullet (no legend)
+    { x: [], y: [], type: 'scatter', mode: 'markers',
+      marker: { size: 10, color: halleyColor, line: { width: 1, color: halleyColor } },
+      name: 'Halley step', hoverinfo: 'skip', showlegend: false, visible: false }
+  );
+
   // y-range from visible
   const visibleYs = [];
   if (traces[0].visible) visibleYs.push(...fVals);
@@ -973,8 +999,10 @@ function updateFTauPlot(userRange) {
 
   const layout = {
     title:`f(τ) and higher derivatives (α=${alpha.toFixed(2)})`,
-    xaxis: ftauUserRange ? {title:'τ'} : {title:'τ', range:[x0, x1]},
-    yaxis: ftauUserRange ? {title:'value'} : {title:'value', range:[yMin - yPad, yMax + yPad]},
+    xaxis: ftauUserRange ? { title:'τ', hoverformat: '.2f' }
+                       : { title:'τ', range:[x0,x1], hoverformat: '.2f' },
+    yaxis: ftauUserRange ? { title:'value', hoverformat: '.2f' }
+                         : { title:'value', range:[yMin - yPad, yMax + yPad], hoverformat: '.2f' },
     shapes: [
       {
         type: 'rect',
@@ -1057,11 +1085,96 @@ function updateFTauPlot(userRange) {
       }
       
     });
+
+    gd.on('plotly_hover', ev => {
+      // Only react when hovering the f(τ) trace
+      const pt = ev.points && ev.points[0];
+      if (!pt) return;
+      const trace = gd.data[pt.curveNumber];
+      if (!trace || trace.name !== 'f(τ)') return;
+
+      const tau0 = pt.x;
+      const f0   = pt.y;
+
+      const preset = document.getElementById('preset-ftau').value;
+      const scoresText = (preset !== 'custom')
+        ? presets[preset]
+        : document.getElementById('scores-ftau').value;
+
+      const scores = scoresText.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
+      const alpha = parseFloat(document.getElementById('alpha-ftau').value);
+      if (!scores.length) return;
+
+      const fp  = fDeriv(scores, tau0, alpha, 1);
+      const fpp = fDeriv(scores, tau0, alpha, 2);
+
+      drawTangentsAtHover(gd, tau0, f0, fp, fpp);
+    });
+
+    gd.on('plotly_unhover', () => {
+      clearTangents(gd);
+    });
+
     ftauIsRedrawing = false;
   });
 
   setupLegendClickHandler('plot-ftau', 'ftau');
 }
+
+
+function drawTangentsAtHover(gd, tau0, f0, fp, fpp) {
+  const slopeNewton = fp;
+  const denom = (Math.abs(fp) < 1e-12) ? NaN : (fp - (f0 * fpp) / (2 * fp));
+  const slopeHalley = denom;
+
+  const xr = (gd.layout.xaxis && gd.layout.xaxis.range) ? gd.layout.xaxis.range : [tau0 - 1, tau0 + 1];
+  const [x0, x1] = xr;
+
+  const newtonY0 = f0 + slopeNewton * (x0 - tau0);
+  const newtonY1 = f0 + slopeNewton * (x1 - tau0);
+  const halleyY0 = isFinite(slopeHalley) ? f0 + slopeHalley * (x0 - tau0) : NaN;
+  const halleyY1 = isFinite(slopeHalley) ? f0 + slopeHalley * (x1 - tau0) : NaN;
+
+  const xNewton = (Math.abs(slopeNewton) < 1e-12) ? NaN : (tau0 - f0 / slopeNewton);
+  const xHalley = (!isFinite(slopeHalley) || Math.abs(slopeHalley) < 1e-12) ? NaN : (tau0 - f0 / slopeHalley);
+
+  const baseIdx = gd.data.length - 4; // Newton line
+  const upd = {
+    x: [
+      [x0, x1],                               // Newton line
+      isFinite(slopeHalley) ? [x0, x1] : [],  // Halley line
+      isFinite(xNewton) ? [xNewton] : [],     // Newton point
+      isFinite(xHalley) ? [xHalley] : []      // Halley point
+    ],
+    y: [
+      [newtonY0, newtonY1],
+      isFinite(slopeHalley) ? [halleyY0, halleyY1] : [],
+      isFinite(xNewton) ? [0] : [],
+      isFinite(xHalley) ? [0] : []
+    ],
+    visible: [
+      true,                       // Newton line (show while hovering)
+      isFinite(slopeHalley),      // Halley line (show if defined)
+      isFinite(xNewton),          // Newton bullet
+      isFinite(xHalley)           // Halley bullet
+    ]
+  };
+  Plotly.restyle(gd, upd, [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3]);
+}
+
+function clearTangents(gd) {
+  const baseIdx = gd.data.length - 4;
+  Plotly.restyle(
+    gd,
+    {
+      x: [[null], [null], [], []],
+      y: [[null], [null], [], []],
+      visible: ['legendonly', 'legendonly', false, false]
+    },
+    [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3]
+  );
+}
+
 
 
 // ======== Convergence ========
