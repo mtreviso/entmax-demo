@@ -88,6 +88,11 @@
             <span id="b-relu-value" class="text-sm text-gray-600">1.0</span>
           </div>
           <div>
+            <label class="block text-xs text-gray-700 mb-1">a (ReLU norm)</label>
+            <input type="range" id="a-relu" min="0.1" max="5" step="0.1" value="1.0" class="w-full">
+            <span id="a-relu-value" class="text-sm text-gray-600">1.0</span>
+          </div>
+          <div>
             <label class="block text-xs text-gray-700 mb-1">Budget (budget)</label>
             <input type="range" id="budget-val" min="0.5" max="5" step="0.1" value="1.0" class="w-full">
             <span id="budget-val-value" class="text-sm text-gray-600">1.0</span>
@@ -164,6 +169,11 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">b (ReLU norm)</label>
             <input type="range" id="b-3d" min="0.1" max="5" step="0.1" value="1" class="w-full">
             <span id="b-3d-value" class="text-sm text-gray-600">1.0</span>
+          </div>
+          <div id="param-a-3d" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-2">a (ReLU norm)</label>
+            <input type="range" id="a-3d" min="0.1" max="5" step="0.1" value="1" class="w-full">
+            <span id="a-3d-value" class="text-sm text-gray-600">1.0</span>
           </div>
           <div id="param-budget-3d" class="hidden">
             <label class="block text-sm font-medium text-gray-700 mb-2">Budget (budget)</label>
@@ -263,7 +273,7 @@
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">f(τ) with higher derivatives</h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Preset</label>
             <select id="preset-ftau" class="w-full px-3 py-2 border border-gray-300 rounded-md">
@@ -288,6 +298,11 @@
             <input type="range" id="alpha-ftau" min="1.01" max="5" step="0.01" value="1.5" class="w-full">
             <span id="alpha-ftau-value" class="text-sm text-gray-600">1.50</span>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Hist. Bins</label>
+            <input type="range" id="bins-ftau" min="2" max="64" step="1" value="4" class="w-full">
+            <span id="bins-ftau-value" class="text-sm text-gray-600">4</span>
+          </div>
         </div>
 
         <div class="mb-4 flex items-center justify-between">
@@ -299,11 +314,11 @@
                 <span class="text-sm text-gray-700">f(τ)</span>
               </label>
               <label class="inline-flex items-center gap-2">
-                <input type="checkbox" id="show-d1" class="h-4 w-4" checked>
+                <input type="checkbox" id="show-d1" class="h-4 w-4">
                 <span class="text-sm text-gray-700">f'(τ)</span>
               </label>
               <label class="inline-flex items-center gap-2">
-                <input type="checkbox" id="show-d2" class="h-4 w-4" checked>
+                <input type="checkbox" id="show-d2" class="h-4 w-4">
                 <span class="text-sm text-gray-700">f''(τ)</span>
               </label>
               <label class="inline-flex items-center gap-2">
@@ -314,6 +329,20 @@
                 <input type="checkbox" id="show-d4" class="h-4 w-4">
                 <span class="text-sm text-gray-700">f⁽⁴⁾(τ)</span>
               </label>
+              <div class="flex flex-wrap gap-4 mt-2">
+                <label class="inline-flex items-center gap-2">
+                  <input type="checkbox" id="show-fh" class="h-4 w-4" checked>
+                  <span class="text-sm text-gray-700">f_H(τ) (histogram)</span>
+                </label>
+                <!-- <label class="inline-flex items-center gap-2">
+                  <input type="checkbox" id="show-rho" class="h-4 w-4">
+                  <span class="text-sm text-gray-700">ρ(τ)</span>
+                </label> -->
+                <label class="inline-flex items-center gap-2">
+                  <input type="checkbox" id="show-kappa" class="h-4 w-4">
+                  <span class="text-sm text-gray-700">κ(τ)</span>
+                </label>
+              </div>
             </div>
           </div>
           <div class="text-right">
@@ -340,10 +369,11 @@
               <option value="moderate" selected>Moderate (0.2, 0.5, 0.7, 0.9, 1.2)</option>
               <option value="extreme">Extreme (0, 1, 2, 3, 5)</option>
               <option value="negative">With negatives (-1, -0.5, 0, 0.5, 1)</option>
-              <option value="halley-diverge">Diverge (1.98)*3, (0.002)*10</option>
-              <option value="halley-diverge2">Diverge (1, 0.99, 0.99)</option>
-              <option value="halley-diverge3">Diverge (1, 1, 0.99)</option>
-              <option value="halley-diverge4">Diverge (9.01, 8.91, 8.91)</option>
+              <option value="halley-diverge"> (1.98)*3, (0.002)*10</option>
+              <option value="halley-diverge2">(1, 0.99, 0.99)</option>
+              <option value="halley-diverge3">(1, 1, 0.99)</option>
+              <option value="halley-diverge4">(9.01, 8.91, 8.91)</option>
+              <option value="newton-overshoot">(100.98) + (0.002)*6</option>
             </select>
           </div>
           <div class="col-md">
@@ -355,12 +385,16 @@
             <input type="range" id="alpha-conv" min="1.01" max="5" step="0.01" value="1.5" class="w-full">
             <span id="alpha-conv-value" class="text-sm text-gray-600">1.50</span>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Method</label>
             <select id="method-conv" class="w-full px-3 py-2 border border-gray-300 rounded-md">
               <option value="bisection">Bisection</option>
               <option value="newton">Newton</option>
               <option value="halley" selected>Halley</option>
+              <option value="shalley">Super Halley</option>
+              <option value="ihalley">Improved Halley</option>
+              <option value="chebyshev">Chebyshev</option>
               <option value="secant">Secant</option>
             </select>
           </div>
@@ -472,14 +506,31 @@ function softmax(scores){
   return ex.map(e => e/s);
 }
 
-function sparsemax(scores){ return entmax(scores, 2.0); }
+function sparsemax(scores){ 
+  return entmax(scores, 2.0); 
+}
 
-function topk(scores, k){
+function raw_topk(scores, k){
   const idx = scores.map((s,i)=>({s,i})).sort((a,b)=>b.s-a.s);
   const out = new Array(scores.length).fill(0);
   for (let i=0;i<Math.min(k, scores.length);i++) out[idx[i].i] = 1/Math.min(k, scores.length);
   return out;
 }
+
+// topk softmax
+function topk(scores, k){
+  const K = Math.min(k, scores.length);
+  const idx = scores.map((s,i)=>({s,i})).sort((a,b)=>b.s-a.s);
+  const masked = new Array(scores.length).fill(-Infinity);
+  for (let i=0;i<K;i++) masked[idx[i].i] = scores[idx[i].i];
+
+  // softmax over the masked scores (others are -inf -> 0)
+  const m = Math.max(...masked);
+  const ex = masked.map(v => v === -Infinity ? 0 : Math.exp(v - m));
+  const s = ex.reduce((a,b)=>a+b,0) || 1;
+  return ex.map(v => v/s);
+}
+
 
 function normmax(scores, alpha, nIter = 50){
   const n = scores.length;
@@ -508,11 +559,17 @@ function normmax(scores, alpha, nIter = 50){
   return pM;
 }
 
-function reluNorm(scores, b){
+function reluNorm(scores, b, a=1){
   const m = Math.max(...scores);
+  // ReLU(y - max(y) + b)
   const zRelu = scores.map(z => Math.max(0, z - (m - b)));
-  const sum = zRelu.reduce((a, v) => a + v, 0) + 1e-12;
-  return zRelu.map(z => z / sum);
+
+  // (ReLU(...))^a
+  const zPow = zRelu.map(z => Math.pow(z, a));
+
+  // normalize
+  const sum = zPow.reduce((acc, v) => acc + v, 0) + 1e-12;
+  return zPow.map(z => z / sum);
 }
 
 function budget(scores, B, nIter = 50){
@@ -547,7 +604,7 @@ function applyTransform(scores, method, params){
   if (method==='sparsemax') return sparsemax(scores);
   if (method==='normmax') return normmax(scores, params.alpha || 2.0);
   if (method==='topk') return topk(scores, params.k || 2);
-  if (method==='relu-norm') return reluNorm(scores, params.b || 1.0);
+  if (method==='relu-norm') return reluNorm(scores, params.b || 1.0, params.a || 1.0);
   if (method==='budget') return budget(scores, params.budget || 2.0);
   return scores;
 }
@@ -601,12 +658,84 @@ function findTau(scores, alpha){
   return tauLo + dm;
 }
 
+
+function buildHistogramOld(scores, alpha, bins) {
+  const X = scores.map(s => s * (alpha - 1));
+  const xmin = Math.min(...X), xmax = Math.max(...X);
+  const width = (xmax - xmin) || 1e-6;           // avoid 0 width
+  const w = width / bins;
+  const edges = Array.from({length: bins+1}, (_,j)=> xmin + j*w);
+  const counts = new Array(bins).fill(0);
+  for (const x of X) {
+    let j = Math.floor((x - xmin) / w);
+    if (j < 0) j = 0;
+    if (j >= bins) j = bins - 1;              // rightmost edge inclusive
+    counts[j]++;
+  }
+  return {edges, counts, width:w};
+}
+
+
+function buildHistogram(scores, alpha, bins) {
+  const X = scores.map(s => s * (alpha - 1));
+  const m = Math.max(...scores);
+  const t0 = (alpha - 1) * m - 1;   // ensures max(z)=1
+  const z = X.map(x => x - t0);
+
+  const B = bins;
+  const H = new Array(B).fill(0);
+  for (const zj of z) {
+    if (zj >= 0 && zj <= 1) {
+      let k = Math.floor(B * zj);
+      if (k >= B) k = B - 1;
+      H[k]++;
+    }
+  }
+  return { H, B, t0 };              // left edge in X-space is x_k = t0 + k/B
+}
+
+
+
+function f_hist_from_histOld(hist, tau, alpha) {
+  const r = 1/(alpha - 1);
+  const {edges, counts, width:w} = hist;
+  let sum = 0;
+  for (let j=0; j<counts.length; j++) {
+    const a = edges[j], b = edges[j+1];
+    if (b <= tau) continue;                    // whole bin to the left of τ
+    const lo = Math.max(a, tau);
+    const hi = b;
+    // ∫ (x-τ)^r dx = (x-τ)^{r+1} / (r+1)
+    // const rp1 = r + 1;
+    // const I = Math.max(0, Math.pow(hi - tau, rp1) - Math.pow(lo - tau, rp1)) / rp1;
+    // const corr =  * (I / w);
+    const corr = Math.pow(lo - tau, r);
+    sum += counts[j] * corr;
+  }
+  return sum - 1;
+}
+
+
+function f_hist_from_hist(hist, tau, alpha) {
+  const r = 1 / (alpha - 1);
+  const { H, B, t0 } = hist;
+  let sum = 0;
+  for (let k = 0; k < B; k++) {
+    const xk = t0 + k / B;          // left-edge representative in X-space
+    const d  = xk - tau;
+    if (d > 0) sum += H[k] * Math.pow(d, r);
+  }
+  return sum - 1;
+}
+
+
 // ======== 3D Surface ========
 function updateParamVisibility3D(){
   const method = document.getElementById('method-3d').value;
   document.getElementById('param-alpha-3d').classList.toggle('hidden', method!=='entmax' && method!=='normmax');
   document.getElementById('param-k-3d').classList.toggle('hidden', method!=='topk');
   document.getElementById('param-b-3d').classList.toggle('hidden', method!=='relu-norm');
+  document.getElementById('param-a-3d').classList.toggle('hidden', method!=='relu-norm');
   document.getElementById('param-budget-3d').classList.toggle('hidden', method!=='budget');
 }
 
@@ -615,6 +744,7 @@ function update3DSurface(){
   const alpha = parseFloat(document.getElementById('alpha-3d').value);
   const k = parseInt(document.getElementById('k-3d').value);
   const b = parseFloat(document.getElementById('b-3d').value);
+  const aRelu3d = parseFloat(document.getElementById('a-3d').value);
   const B = parseFloat(document.getElementById('budget-3d').value);
   const comp = parseInt(document.getElementById('component-3d').value);
   const zRange = parseFloat(document.getElementById('z-range').value);
@@ -623,11 +753,12 @@ function update3DSurface(){
   document.getElementById('alpha-3d-value').textContent = alpha.toFixed(2);
   document.getElementById('k-3d-value').textContent = String(k);
   document.getElementById('b-3d-value').textContent = b.toFixed(1);
+  document.getElementById('a-3d-value').textContent = aRelu3d.toFixed(1);
   document.getElementById('budget-3d-value').textContent = B.toFixed(1);
   document.getElementById('z-range-value').textContent = `±${zRange}`;
   document.getElementById('resolution-3d-value').textContent = String(res);
 
-  const params = {alpha, k, b, budget: B};
+  const params = {alpha, k, b, a: aRelu3d, budget: B};
   const {z2_vals, z3_vals, z_vals} = computeSurface(method, params, res, zRange, comp);
   const trace = {
     x:z2_vals, y:z3_vals, z:z_vals, 
@@ -643,7 +774,7 @@ function update3DSurface(){
     'sparsemax':'Sparsemax', 
     'normmax':`Normmax (α=${alpha.toFixed(2)})`, 
     'topk':`Top-${k}`, 
-    'relu-norm':`ReLU Norm (b=${b.toFixed(1)})`, 
+    'relu-norm':`ReLU Norm (b=${b.toFixed(1)}, a=${aRelu3d.toFixed(1)})`, 
     'budget':`Budget (B=${B.toFixed(1)})`
   };
   
@@ -686,6 +817,7 @@ function update2DSliceAll(){
   const aNorm = parseFloat(document.getElementById('alpha-normmax').value);
   const k = parseInt(document.getElementById('k-topk').value);
   const b = parseFloat(document.getElementById('b-relu').value);
+  const aRelu= parseFloat(document.getElementById('a-relu').value);
   const B = parseFloat(document.getElementById('budget-val').value);
   
   document.getElementById('n-components-value').textContent = String(n);
@@ -693,6 +825,7 @@ function update2DSliceAll(){
   document.getElementById('alpha-normmax-value').textContent = aNorm.toFixed(2);
   document.getElementById('k-topk-value').textContent = String(k);
   document.getElementById('b-relu-value').textContent = b.toFixed(1);
+  document.getElementById('a-relu-value').textContent            = aRelu.toFixed(1);
   document.getElementById('budget-val-value').textContent = B.toFixed(1);
 
   const z = []; 
@@ -716,7 +849,7 @@ function update2DSliceAll(){
     {key:'sparsemax', name:'Sparsemax', show: showMethods['sparsemax']},
     {key:'normmax', name:`Normmax (α=${aNorm.toFixed(2)})`, params:{alpha:aNorm}, show: showMethods['normmax']},
     {key:'topk', name:`Top-${k}`, params:{k}, show: showMethods['topk']},
-    {key:'relu-norm', name:`ReLU Norm (b=${b.toFixed(1)})`, params:{b}, show: showMethods['relu-norm']},
+    {key:'relu-norm', name:`ReLU Norm (b=${b.toFixed(1)}, a=${aRelu.toFixed(1)})`, params:{b, a: aRelu}, show: showMethods['relu-norm']},
     {key:'budget', name:`Budget (B=${B.toFixed(1)})`, params:{budget:B}, show: showMethods['budget']},
   ];
 
@@ -830,7 +963,10 @@ function renderParams(containerId, method, state, onChange){
   if (method==='entmax') addSlider(containerId+'-alpha','α',1.01,5,0.01,state.alpha ?? 1.5);
   else if (method==='normmax') addSlider(containerId+'-alpha','α',1.01,5,0.01,state.alpha ?? 2.0);
   else if (method==='topk') addSlider(containerId+'-k','k',1,3,1,state.k ?? 2);
-  else if (method==='relu-norm') addSlider(containerId+'-b','b',0.1,5,0.1,state.b ?? 1.0);
+  else if (method==='relu-norm') {
+    addSlider(containerId+'-b','b',0.1,5,0.1,state.b ?? 1.0);
+    addSlider(containerId+'-a','a',0.1,5,0.1,state.a ?? 1.0);
+  }
   else if (method==='budget') addSlider(containerId+'-B','Budget',0.5,5,0.1,state.budget ?? 2.0);
 }
 
@@ -843,7 +979,7 @@ function getParamsFromUI(containerId, method){
   if (method==='entmax') return {alpha: val(containerId+'-alpha')};
   if (method==='normmax') return {alpha: val(containerId+'-alpha')};
   if (method==='topk') return {k: parseInt(val(containerId+'-k'))};
-  if (method==='relu-norm') return {b: val(containerId+'-b')};
+  if (method==='relu-norm') return {b: val(containerId+'-b'), a: val(containerId+'-a')};
   if (method==='budget') return {budget: val(containerId+'-B')};
   return {};
 }
@@ -878,6 +1014,7 @@ const presets = {
   'halley-diverge2': '1, 0.99, 0.99',
   'halley-diverge3': '1, 1, 0.99',
   'halley-diverge4': '9.01, 8.91, 8.91',
+  'newton-overshoot': '100.98, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002',
 };
 
 
@@ -902,6 +1039,9 @@ function updateFTauPlot(userRange) {
   const alpha = parseFloat(document.getElementById('alpha-ftau').value);
   document.getElementById('alpha-ftau-value').textContent = alpha.toFixed(2);
   if (!scores.length) return;
+
+  const bins = parseInt(document.getElementById('bins-ftau').value, 10);
+  document.getElementById('bins-ftau-value').textContent = String(bins);
 
   // UI change → forget previous zoom
   // if (userRange === undefined) {
@@ -937,17 +1077,27 @@ function updateFTauPlot(userRange) {
     taus.push(x0 + (x1 - x0) * i / numPoints);
   }
 
+
+  // build histogram once for current scores/alpha
+  const hist = buildHistogram(scores, alpha, bins);
+
   const fVals = taus.map(t => f(scores, t, alpha));
   const d1 = taus.map(t => fDeriv(scores, t, alpha, 1));
   const d2 = taus.map(t => fDeriv(scores, t, alpha, 2));
   const d3 = taus.map(t => fDeriv(scores, t, alpha, 3));
   const d4 = taus.map(t => fDeriv(scores, t, alpha, 4));
+  const fH = taus.map(t => f_hist_from_hist(hist, t, alpha));
+  // const rhoVals   = taus.map(t => rho_of_tau(scores, t, alpha));
+  const kappaVals = taus.map(t => kappa_of_tau(scores, t, alpha));
 
   const showF  = document.getElementById('show-f').checked;
   const showD1 = document.getElementById('show-d1').checked;
   const showD2 = document.getElementById('show-d2').checked;
   const showD3 = document.getElementById('show-d3').checked;
   const showD4 = document.getElementById('show-d4').checked;
+  const showFH  = document.getElementById('show-fh').checked;
+  // const showRho = document.getElementById('show-rho').checked;
+  const showKap = document.getElementById('show-kappa').checked;
 
   const traces = [
     {x:taus, y:fVals, type:'scatter', mode:'lines', name:'f(τ)',   visible: legendState['ftau']['f(τ)']   !== false && showF,  line:{width:2}},
@@ -955,11 +1105,15 @@ function updateFTauPlot(userRange) {
     {x:taus, y:d2,    type:'scatter', mode:'lines', name:"f''(τ)", visible: legendState['ftau']["f''(τ)"] !== false && showD2, line:{width:2}},
     {x:taus, y:d3,    type:'scatter', mode:'lines', name:"f'''(τ)",visible: legendState['ftau']["f'''(τ)"]!== false && showD3, line:{width:2}},
     {x:taus, y:d4,    type:'scatter', mode:'lines', name:"f⁽⁴⁾(τ)",visible: legendState['ftau']["f⁽⁴⁾(τ)"]!== false && showD4, line:{width:2}},
+    {x:taus, y:fH, type:'scatter', mode:'lines', name:'f_H(τ)', visible: legendState['ftau']['f_H(τ)'] !== false && showFH, line:{width:2, dash:'dot'}},
+    // {x:taus, y:rhoVals, type:'scatter', mode:'lines', name:'ρ(τ)', visible: legendState['ftau']['ρ(τ)'] !== false && showRho, line:{width:2, dash:'dash'}},
+    {x:taus, y:kappaVals, type:'scatter', mode:'lines', name:'κ(τ)', visible: legendState['ftau']['κ(τ)'] !== false && showKap, line:{width:2, dash:'dashdot'}},
   ];
 
   // --- hover helpers: tangent lines + intersection bullets (legend-ready)
   const newtonColor = 'rgba(37, 99, 235, 0.85)'; // blue-600-ish, more opaque
   const halleyColor = 'rgba(37, 99, 235, 0.45)'; // same hue, lighter
+  const chebyshevColor = 'rgba(16, 185, 129, 0.65)'; // teal-ish
 
   traces.push(
     // Newton tangent (legend entry visible immediately)
@@ -972,6 +1126,11 @@ function updateFTauPlot(userRange) {
       line: { width: 2, dash: 'dot', color: halleyColor },
       name: 'Halley tangent', hoverinfo: 'skip', showlegend: true, visible: 'legendonly' },
 
+    // Chebyshev tangent (legend entry visible immediately)
+    { x: [null], y: [null], type: 'scatter', mode: 'lines',
+      line: { width: 2, dash: 'dashdot', color: chebyshevColor },
+      name: 'Chebyshev tangent', hoverinfo: 'skip', showlegend: true, visible: 'legendonly' },
+
     // Newton intersection bullet (no legend)
     { x: [], y: [], type: 'scatter', mode: 'markers',
       marker: { size: 10, color: newtonColor, line: { width: 1, color: newtonColor } },
@@ -980,16 +1139,27 @@ function updateFTauPlot(userRange) {
     // Halley intersection bullet (no legend)
     { x: [], y: [], type: 'scatter', mode: 'markers',
       marker: { size: 10, color: halleyColor, line: { width: 1, color: halleyColor } },
-      name: 'Halley step', hoverinfo: 'skip', showlegend: false, visible: false }
+      name: 'Halley step', hoverinfo: 'skip', showlegend: false, visible: false },
+
+    // Chebyshev intersection bullet (no legend)
+    { x: [], y: [], type: 'scatter', mode: 'markers',
+      marker: { size: 10, color: chebyshevColor, line: { width: 1, color: chebyshevColor } },
+      name: 'Chebyshev step', hoverinfo: 'skip', showlegend: false, visible: false }
   );
 
   // y-range from visible
   const visibleYs = [];
-  if (traces[0].visible) visibleYs.push(...fVals);
-  if (traces[1].visible) visibleYs.push(...d1);
-  if (traces[2].visible) visibleYs.push(...d2);
-  if (traces[3].visible) visibleYs.push(...d3);
-  if (traces[4].visible) visibleYs.push(...d4);
+  function pushIfVisible(arr, vis){ if (vis) visibleYs.push(...arr.filter(Number.isFinite)); }
+  pushIfVisible(fVals, traces[0].visible);
+  pushIfVisible(d1,    traces[1].visible);
+  pushIfVisible(d2,    traces[2].visible);
+  pushIfVisible(d3,    traces[3].visible);
+  pushIfVisible(d4,    traces[4].visible);
+  pushIfVisible(fH,    traces[5].visible);
+  // pushIfVisible(rhoVals, traces[6].visible);
+  pushIfVisible(kappaVals, traces[7].visible);
+
+
   const yMin = visibleYs.length ? Math.min(...visibleYs) : -1;
   const yMax = visibleYs.length ? Math.max(...visibleYs) : 1;
   const yPad = (yMax - yMin) * 0.1 || 0.5;
@@ -1123,54 +1293,76 @@ function updateFTauPlot(userRange) {
 
 function drawTangentsAtHover(gd, tau0, f0, fp, fpp) {
   const slopeNewton = fp;
-  const denom = (Math.abs(fp) < 1e-12) ? NaN : (fp - (f0 * fpp) / (2 * fp));
-  const slopeHalley = denom;
+
+  // Halley effective slope: f' - (f f'')/(2 f')
+  const denomHalley = (Math.abs(fp) < 1e-12) ? NaN : (fp - (f0 * fpp) / (2 * fp));
+  const slopeHalley = denomHalley;
+
+  // Chebyshev effective slope: f' / (1 + 0.5 L),  L = (f f'')/(f')^2
+  let slopeCheb = NaN;
+  if (Math.abs(fp) >= 1e-12) {
+    const L = (f0 * fpp) / (fp * fp);
+    const d  = 1 + 0.5 * L;
+    slopeCheb = (Math.abs(d) < 1e-12) ? NaN : (fp / d);
+  }
 
   const xr = (gd.layout.xaxis && gd.layout.xaxis.range) ? gd.layout.xaxis.range : [tau0 - 1, tau0 + 1];
   const [x0, x1] = xr;
 
   const newtonY0 = f0 + slopeNewton * (x0 - tau0);
   const newtonY1 = f0 + slopeNewton * (x1 - tau0);
+
   const halleyY0 = isFinite(slopeHalley) ? f0 + slopeHalley * (x0 - tau0) : NaN;
   const halleyY1 = isFinite(slopeHalley) ? f0 + slopeHalley * (x1 - tau0) : NaN;
 
+  const chebY0 = isFinite(slopeCheb) ? f0 + slopeCheb * (x0 - tau0) : NaN;
+  const chebY1 = isFinite(slopeCheb) ? f0 + slopeCheb * (x1 - tau0) : NaN;
+
   const xNewton = (Math.abs(slopeNewton) < 1e-12) ? NaN : (tau0 - f0 / slopeNewton);
   const xHalley = (!isFinite(slopeHalley) || Math.abs(slopeHalley) < 1e-12) ? NaN : (tau0 - f0 / slopeHalley);
+  const xCheb   = (!isFinite(slopeCheb)   || Math.abs(slopeCheb)   < 1e-12) ? NaN : (tau0 - f0 / slopeCheb);
 
-  const baseIdx = gd.data.length - 4; // Newton line
+  // NOTE: helper traces count changed: now 6 traces appended at the end
+  const baseIdx = gd.data.length - 6; // Newton line index
   const upd = {
     x: [
       [x0, x1],                               // Newton line
       isFinite(slopeHalley) ? [x0, x1] : [],  // Halley line
+      isFinite(slopeCheb) ? [x0, x1] : [],    // Chebyshev line
       isFinite(xNewton) ? [xNewton] : [],     // Newton point
-      isFinite(xHalley) ? [xHalley] : []      // Halley point
+      isFinite(xHalley) ? [xHalley] : [],     // Halley point
+      isFinite(xCheb)   ? [xCheb]   : []      // Chebyshev point
     ],
     y: [
       [newtonY0, newtonY1],
       isFinite(slopeHalley) ? [halleyY0, halleyY1] : [],
+      isFinite(slopeCheb) ? [chebY0, chebY1] : [],
       isFinite(xNewton) ? [0] : [],
-      isFinite(xHalley) ? [0] : []
+      isFinite(xHalley) ? [0] : [],
+      isFinite(xCheb)   ? [0] : []
     ],
     visible: [
       true,                       // Newton line (show while hovering)
-      isFinite(slopeHalley),      // Halley line (show if defined)
+      isFinite(slopeHalley),      // Halley line
+      isFinite(slopeCheb),        // Chebyshev line
       isFinite(xNewton),          // Newton bullet
-      isFinite(xHalley)           // Halley bullet
+      isFinite(xHalley),          // Halley bullet
+      isFinite(xCheb)             // Chebyshev bullet
     ]
   };
-  Plotly.restyle(gd, upd, [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3]);
+  Plotly.restyle(gd, upd, [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3, baseIdx + 4, baseIdx + 5]);
 }
 
 function clearTangents(gd) {
-  const baseIdx = gd.data.length - 4;
+  const baseIdx = gd.data.length - 6;
   Plotly.restyle(
     gd,
     {
-      x: [[null], [null], [], []],
-      y: [[null], [null], [], []],
-      visible: ['legendonly', 'legendonly', false, false]
+      x: [[null], [null], [null], [], [], []],
+      y: [[null], [null], [null], [], [], []],
+      visible: ['legendonly', 'legendonly', 'legendonly', false, false, false]
     },
-    [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3]
+    [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3, baseIdx + 4, baseIdx + 5]
   );
 }
 
@@ -1250,15 +1442,140 @@ function halleyMethod(scores, alpha, tauInit, maxIter=20){
     const fv = f(scores, tau, alpha);
     const fp = fPrime(scores, tau, alpha);
     const fpp = fSecondDeriv(scores, tau, alpha);
+    
     iters.push({iter:i, tau, f:fv});
     log.push(`Halley ${i}: tau=${tau.toFixed(6)}  f=${fv.toExponential(3)}  f'=${fp.toExponential(3)}  f''=${fpp.toExponential(3)}`);
+    
     if (Math.abs(fv) < 1e-9 || Math.abs(fp) < 1e-12) break;
-    const denom = fp - (fv * fpp) / (2 * fp);
-    if (Math.abs(denom) < 1e-12) break;
-    tau = tau - fv / denom;
+    
+    // const num  = fv;
+    // const denom = fp - (fv * fpp) / (2 * fp);
+    const L = (fv * fpp) / (fp * fp);
+    const num = fv * 2;
+    const denom = fp * (2 - L); 
+    
+    if (!isFinite(denom) || Math.abs(denom) < 1e-12) break;
+    
+    tau = tau - num / denom;
   }
   return {iters, log};
 }
+
+// Super Halley’s Method 
+function superHalleyMethod(scores, alpha, tauInit, maxIter = 20) {
+  const iters = [];
+  const log = [];
+  let tau = tauInit;
+
+  for (let i = 0; i < maxIter; i++) {
+    const fv  = f(scores, tau, alpha);
+    const fp  = fDeriv(scores, tau, alpha, 1);
+    const fpp = fDeriv(scores, tau, alpha, 2);
+
+    iters.push({ iter: i, tau, f: fv });
+    log.push(
+      `SH ${i}: tau=${tau.toFixed(6)}  f=${fv.toExponential(3)}  f'=${fp.toExponential(3)}  f''=${fpp.toExponential(3)}`
+    );
+
+    // stopping / safety
+    if (Math.abs(fv) < 1e-9) break;
+    if (Math.abs(fp) < 1e-12) break;
+
+    const L = (fv * fpp) / (fp * fp);
+    const num = (2 - L) * fv;
+    const den = 2 * fp * (1 - L);
+
+    if (!isFinite(den) || Math.abs(den) < 1e-12) break;
+
+    tau = tau - num / den;
+  }
+
+  return { iters, log };
+}
+
+// Improved Halley’s Method (IHM) — Barrada et al., 2020
+// x_{n+1} = x_n - [4 f / f'] * (1 - L) / (4 - 6L + L^2),
+// where L = (f f'') / (f')^2
+function improvedHalleyMethod(scores, alpha, tauInit, maxIter = 20) {
+  const iters = [];
+  const log = [];
+  let tau = tauInit;
+
+  for (let i = 0; i < maxIter; i++) {
+    const fv  = f(scores, tau, alpha);
+    const fp  = fDeriv(scores, tau, alpha, 1);
+    const fpp = fDeriv(scores, tau, alpha, 2);
+
+    iters.push({ iter: i, tau, f: fv });
+    log.push(
+      `IHM ${i}: tau=${tau.toFixed(6)}  f=${fv.toExponential(3)}  f'=${fp.toExponential(3)}  f''=${fpp.toExponential(3)}`
+    );
+
+    // stopping / safety
+    if (Math.abs(fv) < 1e-9) break;
+    if (Math.abs(fp) < 1e-12) break;
+
+    const L = (fv * fpp) / (fp * fp);
+    const num = 4 * (1 - L) * fv;
+    const den = fp * (4 - 6 * L + L * L);
+
+    if (!isFinite(den) || Math.abs(den) < 1e-12) break;
+
+    tau = tau - num / den;
+  }
+
+  return { iters, log };
+}
+
+
+function chebyshevMethod(scores, alpha, tauInit, maxIter = 20) {
+  const iters = [];
+  const log = [];
+  let tau = tauInit;
+
+  for (let i = 0; i < maxIter; i++) {
+    const fv  = f(scores, tau, alpha);
+    const fp  = fDeriv(scores, tau, alpha, 1);
+    const fpp = fDeriv(scores, tau, alpha, 2);
+
+    iters.push({ iter: i, tau, f: fv });
+    log.push(
+      `Cheb ${i}: tau=${tau.toFixed(6)}  f=${fv.toExponential(3)}  f'=${fp.toExponential(3)}  f''=${fpp.toExponential(3)}`
+    );
+
+    // stopping / safety
+    if (Math.abs(fv) < 1e-9) break;
+    if (Math.abs(fp) < 1e-12) break;
+
+    const L = (fv * fpp) / (fp * fp);         // L = (f f'') / (f')^2
+    const sN = -fv / fp;                      // Newton step
+    const sC = (1 + 0.5 * L) * sN;            // Chebyshev step (cubic)
+
+    if (!isFinite(sC)) break;
+
+    tau = tau + sC;
+  }
+
+  return { iters, log };
+}
+
+function rho_of_tau(scores, tau, alpha){
+  const fv  = f(scores, tau, alpha);
+  const fp  = fDeriv(scores, tau, alpha, 1);
+  const fpp = fDeriv(scores, tau, alpha, 2);
+  const denom = fp*fp;
+  if (!isFinite(denom) || Math.abs(denom) < 1e-18) return NaN;
+  return (fv * fpp) / denom;
+}
+
+function kappa_of_tau(scores, tau, alpha){
+  const r = rho_of_tau(scores, tau, alpha);
+  if (!isFinite(r)) return NaN;
+  const d = 2 - r;
+  if (!isFinite(d) || Math.abs(d) < 1e-18) return NaN;
+  return 2 / d;
+}
+
 
 function updateTauInitRange(){
   const scoresText = document.getElementById('scores-conv').value;
@@ -1369,7 +1686,18 @@ function updateConvergencePlot(userRange) {
     const tau0 = tauLo + (tauHi - tauLo) * 0.3;
     const tau1 = tauLo + (tauHi - tauLo) * 0.7;
     solverOut = secantMethod(scores, alpha, tau0, tau1, 25);
-  } else {
+  } 
+  // 
+  else if (method === 'shalley') {
+    solverOut = superHalleyMethod(scores, alpha, tauInit, 25);
+  } 
+  else if (method === 'ihalley') {
+    solverOut = improvedHalleyMethod(scores, alpha, tauInit, 25);
+  }
+  else if (method === 'chebyshev') {
+    solverOut = chebyshevMethod(scores, alpha, tauInit, 25);
+  } 
+  else {
     solverOut = halleyMethod(scores, alpha, tauInit, 25);
   }
   const iters = solverOut.iters;
@@ -1651,14 +1979,14 @@ document.querySelectorAll('.tab-button').forEach(btn=> {
 });
 
 // 3D Surface events
-['method-3d','alpha-3d','k-3d','b-3d','budget-3d','component-3d','z-range','resolution-3d'].forEach(id=>{
+['method-3d','alpha-3d','k-3d','b-3d','a-3d','budget-3d','component-3d','z-range','resolution-3d'].forEach(id=>{
   const el = document.getElementById(id);
   if (id==='method-3d') el.addEventListener('change', ()=> { updateParamVisibility3D(); update3DSurface(); });
   else el.addEventListener('input', update3DSurface);
 });
 
 // 2D Slice events
-['n-components','alpha-entmax','alpha-normmax','k-topk','b-relu','budget-val'].forEach(id=>{
+['n-components','alpha-entmax','alpha-normmax','k-topk','b-relu','a-relu','budget-val'].forEach(id=>{
   document.getElementById(id).addEventListener('input', update2DSliceAll);
 });
 
@@ -1684,6 +2012,18 @@ document.getElementById('alpha-ftau').addEventListener('input', updateFTauPlot);
 ['show-f', 'show-d1', 'show-d2', 'show-d3', 'show-d4'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => updateFTauPlot());
 });
+
+document.getElementById('bins-ftau').addEventListener('input', () => {
+  document.getElementById('bins-ftau-value').textContent =
+    String(parseInt(document.getElementById('bins-ftau').value,10));
+  updateFTauPlot();
+});
+['show-fh',
+  // 'show-rho',
+  'show-kappa'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>updateFTauPlot());
+});
+
 
 // Convergence events
 document.getElementById('scores-conv').addEventListener('change', () => {
