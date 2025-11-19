@@ -660,11 +660,22 @@
         if (normalizedValue < 0.5) {
           // Green to blue
           const t = normalizedValue * 2;
-          color = new THREE.Color(0x16A349).lerp(new THREE.Color(0x2463EB), t);
+          if (mode === 'tsallis-entropy'){
+            color = new THREE.Color(0xDC2625).lerp(new THREE.Color(0x2463EB), t);
+          }
+          else{
+            color = new THREE.Color(0x16A349).lerp(new THREE.Color(0x2463EB), t);
+          }
         } else {
           // Blue to red
           const t = (normalizedValue - 0.5) * 2;
-          color = new THREE.Color(0x2463EB).lerp(new THREE.Color(0xDC2625), t);
+          if (mode === 'tsallis-entropy'){
+            color = new THREE.Color(0x2463EB).lerp(new THREE.Color(0x16A349), t);
+          }
+          else{
+            color = new THREE.Color(0x2463EB).lerp(new THREE.Color(0xDC2625), t);
+          }
+          
         }
         
         return color;
