@@ -199,7 +199,7 @@
                 </div>
                 <div id="alpha-container">
                     <label class="block text-xs font-medium text-slate-400 mb-2">α (Entmax)</label>
-                    <input type="range" id="alpha" min="1.1" max="2.5" step="0.1" value="1.5" 
+                    <input type="range" id="alpha" min="1.01" max="2.5" step="0.01" value="1.5" 
                         class="w-full accent-pink-500" oninput="updateViz()">
                     <div class="text-center text-pink-400 font-mono text-sm mt-1" id="alpha-val">1.5</div>
                 </div>
@@ -217,7 +217,7 @@
                 </div>
                 <div id="rope-dim-container" class="hidden">
                     <label class="block text-xs font-medium text-slate-400 mb-2">Embedding Dim (d)</label>
-                    <input type="range" id="rope-dim" min="8" max="64" step="8" value="16" 
+                    <input type="range" id="rope-dim" min="2" max="128" step="2" value="16" 
                         class="w-full accent-cyan-500" oninput="updateViz()">
                     <div class="text-center text-cyan-400 font-mono text-sm mt-1" id="rope-dim-val">16</div>
                 </div>
@@ -857,7 +857,7 @@
             // Update displays
             document.getElementById('seq-length-val').textContent = state.seqLength;
             document.getElementById('query-pos-val').textContent = state.queryPos;
-            document.getElementById('alpha-val').textContent = state.alpha.toFixed(1);
+            document.getElementById('alpha-val').textContent = state.alpha.toFixed(2);
             document.getElementById('alibi-slope-val').textContent = state.alibiSlope.toFixed(2);
             document.getElementById('rope-theta-val').textContent = state.ropeTheta;
             document.getElementById('rope-dim-val').textContent = state.ropeDim;
