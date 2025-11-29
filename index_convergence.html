@@ -127,6 +127,10 @@
               <span class="text-sm text-gray-700">ReLU Norm</span>
             </label>
             <label class="inline-flex items-center gap-2">
+              <input type="checkbox" id="show-silu" class="h-4 w-4" checked>
+              <span class="text-sm text-gray-700">SILU Norm</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
               <input type="checkbox" id="show-budget" class="h-4 w-4" checked>
               <span class="text-sm text-gray-700">Budget</span>
             </label>
@@ -152,6 +156,7 @@
               <option value="normmax">Normmax</option>
               <option value="topk">Top-k</option>
               <option value="relu-norm">ReLU Norm</option>
+              <option value="silu-norm">SILU Norm</option>
               <option value="budget">Budget</option>
             </select>
           </div>
@@ -223,6 +228,7 @@
               <option value="normmax">Normmax</option>
               <option value="topk">Top-k</option>
               <option value="relu-norm">ReLU Norm</option>
+              <option value="silu-norm">SILU Norm</option>
               <option value="budget">Budget</option>
               <option value="">None</option>
             </select>
@@ -238,6 +244,7 @@
               <option value="normmax">Normmax</option>
               <option value="topk">Top-k</option>
               <option value="relu-norm">ReLU Norm</option>
+              <option value="silu-norm">SILU Norm</option>
               <option value="budget">Budget</option>
               <option value="">None</option>
             </select>
@@ -253,6 +260,7 @@
               <option value="normmax">Normmax</option>
               <option value="topk">Top-k</option>
               <option value="relu-norm">ReLU Norm</option>
+              <option value="silu-norm">SILU Norm</option>
               <option value="budget">Budget</option>
               <option value="">None</option>
             </select>
@@ -572,6 +580,14 @@ function reluNorm(scores, b, a=1){
   return zPow.map(z => z / sum);
 }
 
+function siluNorm(scores) {
+  // Apply SiLU: x * sigmoid(x)
+  const silu = scores.map(x => x / (1 + Math.exp(-x)));
+  // Normalize
+  const sum = Math.sqrt(silu.reduce((acc, v) => acc + Math.pow(v, 2.0), 0) + 1e-12);
+  return silu.map(v => v / sum);
+}
+
 function budget(scores, B, nIter = 50){
   const n = scores.length;
   const minScore = Math.min(...scores);
@@ -605,6 +621,7 @@ function applyTransform(scores, method, params){
   if (method==='normmax') return normmax(scores, params.alpha || 2.0);
   if (method==='topk') return topk(scores, params.k || 2);
   if (method==='relu-norm') return reluNorm(scores, params.b || 1.0, params.a || 1.0);
+  if (method==='silu-norm') return siluNorm(scores);
   if (method==='budget') return budget(scores, params.budget || 2.0);
   return scores;
 }
@@ -775,6 +792,7 @@ function update3DSurface(){
     'normmax':`Normmax (α=${alpha.toFixed(2)})`, 
     'topk':`Top-${k}`, 
     'relu-norm':`ReLU Norm (b=${b.toFixed(1)}, a=${aRelu3d.toFixed(1)})`, 
+    'silu-norm':`SILU Norm`, 
     'budget':`Budget (B=${B.toFixed(1)})`
   };
   
@@ -840,6 +858,7 @@ function update2DSliceAll(){
     'normmax': document.getElementById('show-normmax').checked,
     'topk': document.getElementById('show-topk').checked,
     'relu-norm': document.getElementById('show-relu').checked,
+    'silu-norm': document.getElementById('show-silu').checked,
     'budget': document.getElementById('show-budget').checked
   };
   
@@ -850,6 +869,7 @@ function update2DSliceAll(){
     {key:'normmax', name:`Normmax (α=${aNorm.toFixed(2)})`, params:{alpha:aNorm}, show: showMethods['normmax']},
     {key:'topk', name:`Top-${k}`, params:{k}, show: showMethods['topk']},
     {key:'relu-norm', name:`ReLU Norm (b=${b.toFixed(1)}, a=${aRelu.toFixed(1)})`, params:{b, a: aRelu}, show: showMethods['relu-norm']},
+    {key:'silu-norm', name:'SILU Norm', show: showMethods['silu-norm']},
     {key:'budget', name:`Budget (B=${B.toFixed(1)})`, params:{budget:B}, show: showMethods['budget']},
   ];
 
@@ -1991,7 +2011,7 @@ document.querySelectorAll('.tab-button').forEach(btn=> {
 });
 
 // Method selection checkboxes for 2D slice
-['show-softmax', 'show-entmax', 'show-sparsemax', 'show-normmax', 'show-topk', 'show-relu', 'show-budget'].forEach(id => {
+['show-softmax', 'show-entmax', 'show-sparsemax', 'show-normmax', 'show-topk', 'show-relu', 'show-silu', 'show-budget'].forEach(id => {
   document.getElementById(id).addEventListener('change', update2DSliceAll);
 });
 

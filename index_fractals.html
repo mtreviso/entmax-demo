@@ -35,9 +35,12 @@
     <!-- Tabs -->
     <div class="border-b border-slate-200 mb-4">
       <nav class="flex gap-3">
-        <button class="tab-btn px-4 py-2 border-b-2 border-indigo-600 text-indigo-700 font-medium" data-tab="tab2d">2D Slice</button>
+
+        <button class="tab-btn px-4 py-2 border-b-2 border-indigo-600 text-indigo-700 font-medium" data-tab="tabiters">τ-space</button>
+
+        <button class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700" data-tab="tab2d">2D Slice</button>
         <!-- <button class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700" data-tab="tab3d">3D Slice</button> -->
-        <button class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700" data-tab="tabiters">τ-space</button>
+        
         <!-- <button class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700" data-tab="tabtau3d">τ-space 3D</button> -->
       </nav>
     </div>
@@ -79,37 +82,12 @@
       </div>
     </div>
 
-    <!-- 2D -->
-    <section id="tab2d" class="">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
-        <div>
-          <label class="block text-xs text-slate-700 mb-1">n (dim)</label>
-          <input type="range" id="nDim2d" min="2" max="5" step="1" value="3" class="w-full" />
-          <div class="text-xs text-slate-500"><span id="nDim2dVal">3</span></div>
-        </div>
-        <div>
-          <label class="block text-xs text-slate-700 mb-1">z₃ (fixed)</label>
-          <input type="range" id="z3Fixed" min="-6" max="6" step="0.1" value="0" class="w-full" />
-          <div class="text-xs text-slate-500"><span id="z3FixedVal">0.0</span></div>
-        </div>
-        <div class="col-span-2 text-right">
-          <button id="render2d" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded">Render 2D</button>
-        </div>
-      </div>
-      <div class="canvas-wrap" id="wrap2d">
-        <canvas id="canvas2d"></canvas>
-        <!-- <div class="overlay flex items-start justify-end">
-          <span class="badge bg-white/80 text-slate-700 text-xs px-2 py-1 rounded shadow">Viridis: 0.0 → 1.0 convergence ratio</span>
-        </div> -->
-      </div>
-    </section>
-
     <!-- Iterations map in t-space -->
-    <section id="tabiters" class="hidden">
+    <section id="tabiters" class="">
       <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-3 items-end">
         <div>
           <label class="block text-xs text-slate-700 mb-1">t₁ min</label>
-          <input type="number" id="t1min" step="0.1" value="-1.0" class="w-full border rounded px-2 py-1" />
+          <input type="number" id="t1min" step="0.1" value="-2.0" class="w-full border rounded px-2 py-1" />
         </div>
         <div>
           <label class="block text-xs text-slate-700 mb-1">t₁ max</label>
@@ -117,7 +95,7 @@
         </div>
         <div>
           <label class="block text-xs text-slate-700 mb-1">t₂ min</label>
-          <input type="number" id="t2min" step="0.1" value="-1.0" class="w-full border rounded px-2 py-1" />
+          <input type="number" id="t2min" step="0.1" value="-2.0" class="w-full border rounded px-2 py-1" />
         </div>
         <div>
           <label class="block text-xs text-slate-700 mb-1">t₂ max</label>
@@ -138,6 +116,31 @@
             <span>Color = iterations (1 … T), diverged = T+1 (white)</span>
           </div> -->
         </div>
+      </div>
+    </section>
+
+    <!-- 2D -->
+    <section id="tab2d" class="hidden">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 items-end">
+        <div>
+          <label class="block text-xs text-slate-700 mb-1">n (dim)</label>
+          <input type="range" id="nDim2d" min="2" max="5" step="1" value="3" class="w-full" />
+          <div class="text-xs text-slate-500"><span id="nDim2dVal">3</span></div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-700 mb-1">z₃ (fixed)</label>
+          <input type="range" id="z3Fixed" min="-6" max="6" step="0.1" value="0" class="w-full" />
+          <div class="text-xs text-slate-500"><span id="z3FixedVal">0.0</span></div>
+        </div>
+        <div class="col-span-2 text-right">
+          <button id="render2d" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded">Render 2D</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" id="wrap2d">
+        <canvas id="canvas2d"></canvas>
+        <!-- <div class="overlay flex items-start justify-end">
+          <span class="badge bg-white/80 text-slate-700 text-xs px-2 py-1 rounded shadow">Viridis: 0.0 → 1.0 convergence ratio</span>
+        </div> -->
       </div>
     </section>
 
